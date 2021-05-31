@@ -53,11 +53,6 @@ def client(db_session):
     app.dependency_overrides[require_user] = _require_user
     app.dependency_overrides[require_token] = _require_token
 
-    SubscriptionFactory._meta.sqlalchemy_session = db_session
-    SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
-
-    SubscriptionFactory(username="user", application="app", limit=1000)
-
     yield TestClient(app)
 
 
@@ -82,9 +77,34 @@ class TestApplication:
         assert response.status_code == 200
         assert response.json().get("limit") == 123
 
-    def test_get_application_token(self, client):
+    def test_get_application_token(self, client, db_session):
+        SubscriptionFactory._meta.sqlalchemy_session = db_session
+        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+
+        SubscriptionFactory(username="user", application="app", limit=1000)
+
         response = client.get(
             "/token/app",
         )
         assert response.status_code == 200
         assert response.json().get("token") is not None
+
+    def test_create_duplicate_subscription(self, client):
+        new_subscription = SubscriptionIn(
+            username="tester",
+            application="application",
+            limit=123,
+            expires_at=None,
+            recurring=False,
+        )
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 200
+
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 200

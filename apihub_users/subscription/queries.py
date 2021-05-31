@@ -19,6 +19,20 @@ class SubscriptionException(Exception):
 
 class ApplicationQuery(BaseQuery):
     def create_subscription(self, subscription_create: SubscriptionCreate):
+        # check existing subscription
+        found_existing_subscription = True
+        try:
+            self.get_active_subscription(
+                subscription_create.username, subscription_create.application
+            )
+        except SubscriptionException:
+            found_existing_subscription = False
+
+        if found_existing_subscription:
+            raise SubscriptionException(
+                "Found existing subscription, please delete it before create new subscription"
+            )
+
         new_subscription = Subscription(
             username=subscription_create.username,
             application=subscription_create.application,
@@ -28,6 +42,14 @@ class ApplicationQuery(BaseQuery):
             created_by=subscription_create.created_by,
         )
         self.session.add(new_subscription)
+        new_usage = Usage(
+            username=subscription_create.username,
+            application=subscription_create.application,
+            usage=0,
+            starts_at=datetime.now(),
+            expires_at=subscription_create.expires_at,
+        )
+        self.session.add(new_usage)
         self.session.commit()
 
     def get_active_subscription(

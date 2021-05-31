@@ -43,8 +43,12 @@ def create_subscription(
         recurring=subscription.recurring,
         created_by=username,
     )
-    query = ApplicationQuery(session)
-    query.create_subscription(subscription_create)
+    try:
+        query = ApplicationQuery(session)
+        query.create_subscription(subscription_create)
+        return subscription_create
+    except SubscriptionException:
+        return {}
 
 
 @router.get("/subscription/{application}")
