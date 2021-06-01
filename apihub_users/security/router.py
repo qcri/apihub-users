@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi_jwt_auth import AuthJWT
 
-from ..common.db_session import create_session, Base, DB_ENGINE
+from ..common.db_session import create_session
 from .schemas import UserCreate, UserBase, UserRegister, UserType
 from .queries import UserQuery, UserException
 from .depends import require_token, require_admin, require_app
@@ -32,39 +32,6 @@ class AuthenticateResponse(BaseModel):
     roles: List[str]
     access_token: str
     expires_time: int
-
-
-class SuperUser(BaseSettings):
-    username: str
-    password: str
-    email: str
-
-    def as_usercreate(self):
-        return UserCreate(
-            username=self.username,
-            password=self.password,
-            email=self.email,
-            role=UserType.ADMIN,
-        )
-
-
-@router.get("/_init")
-async def _init(
-    session=Depends(create_session),
-):
-    Base.metadata.bind = DB_ENGINE
-    Base.metadata.create_all()
-
-    user = SuperUser().as_usercreate()
-    UserQuery(session).create_user(user)
-
-
-@router.get("/_delete")
-async def _delete(
-    session=Depends(create_session),
-):
-    Base.metadata.bind = DB_ENGINE
-    Base.metadata.drop_all()
 
 
 @router.get("/_authenticate")
