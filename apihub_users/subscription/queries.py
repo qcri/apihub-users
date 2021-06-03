@@ -62,7 +62,7 @@ class ApplicationQuery(BaseQuery):
                     Subscription.username == username,
                     Subscription.application == application,
                     or_(
-                        Subscription.expires_at == None,  # noqa
+                        Subscription.expires_at.is_(None),
                         Subscription.expires_at > datetime.now(),
                     ),
                 )
@@ -87,7 +87,7 @@ class ApplicationQuery(BaseQuery):
             subscriptions = self.session.query(Subscription).filter(
                 Subscription.username == username,
                 or_(
-                    Subscription.expires_at is None,
+                    Subscription.expires_at.is_(None),
                     Subscription.expires_at > datetime.now(),
                 ),
             )
@@ -129,7 +129,7 @@ class ApplicationQuery(BaseQuery):
                     Usage.username == username,
                     Usage.application == application,
                     or_(
-                        Usage.expires_at == None,  # noqa
+                        Usage.expires_at.is_(None),
                         Usage.expires_at > datetime.now(),
                     ),
                 )
@@ -151,7 +151,7 @@ class ApplicationQuery(BaseQuery):
             usages = self.session.query(Usage).filter(
                 Usage.username == username,
                 or_(
-                    Usage.expires_at == None,  # noqa
+                    Usage.expires_at.is_(None),
                     Usage.expires_at > datetime.now(),
                 ),
             )
