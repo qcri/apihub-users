@@ -2,12 +2,16 @@ from datetime import datetime, timedelta
 
 import pytest
 import factory
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 
 from apihub_users.common.db_session import create_session
 from apihub_users.security.schemas import UserBase, UserType
 from apihub_users.security.depends import require_user, require_admin, require_token
+from apihub_users.subscription.depends import (
+    require_subscription,
+    update_subscription_balance,
+)
 from apihub_users.subscription.models import Subscription
 from apihub_users.subscription.router import router, SubscriptionIn
 
@@ -19,7 +23,8 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
-    limit = 100
+    credit = 100
+    balance = 0
     starts_at = factory.LazyFunction(datetime.now)
     expires_at = factory.LazyFunction(lambda: datetime.now() + timedelta(days=1))
     recurring = False
@@ -53,6 +58,10 @@ def client(db_session):
     app.dependency_overrides[require_user] = _require_user
     app.dependency_overrides[require_token] = _require_token
 
+    @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
+    def api_function(application: str, username: str = Depends(require_subscription)):
+        pass
+
     yield TestClient(app)
 
 
@@ -61,7 +70,7 @@ class TestApplication:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            limit=123,
+            credit=123,
             expires_at=None,
             recurring=False,
         )
@@ -75,13 +84,13 @@ class TestApplication:
             "/subscription/application",
         )
         assert response.status_code == 200
-        assert response.json().get("limit") == 123
+        assert response.json().get("credit") == 123
 
     def test_get_application_token(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="user", application="app", limit=1000)
+        SubscriptionFactory(username="user", application="app", credit=1000)
 
         response = client.get(
             "/token/app",
@@ -93,7 +102,7 @@ class TestApplication:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            limit=123,
+            credit=123,
             expires_at=None,
             recurring=False,
         )
@@ -107,4 +116,19 @@ class TestApplication:
             "/subscription",
             data=new_subscription.json(),
         )
+        assert response.status_code == 200
+
+    def test_update_balance(self, client, db_session):
+        SubscriptionFactory._meta.sqlalchemy_session = db_session
+        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+
+        SubscriptionFactory(username="user", application="test", credit=1000)
+
+        response = client.get(
+            "/token/test",
+        )
+        assert response.status_code == 200
+        token = response.json().get("token")
+
+        response = client.get("/api/test", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200

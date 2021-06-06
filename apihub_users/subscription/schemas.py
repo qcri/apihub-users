@@ -11,7 +11,7 @@ class SubscriptionBase(BaseModel):
 class SubscriptionCreate(SubscriptionBase):
     username: str
     application: str
-    limit: int
+    credit: int
     starts_at: datetime = datetime.now()
     expires_at: Optional[datetime] = None
     recurring: bool = False
@@ -21,19 +21,4 @@ class SubscriptionCreate(SubscriptionBase):
 
 class SubscriptionDetails(SubscriptionCreate):
     created_at: datetime
-
-
-class UsageBase(BaseModel):
-    pass
-
-
-class UsageCreate(UsageBase):
-    username: str
-    application: str
-    usage: int
-    starts_at: datetime
-    expires_at: Optional[datetime] = None
-
-
-class UsageDetails(UsageCreate):
-    pass
+    balance: int

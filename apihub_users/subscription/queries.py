@@ -3,21 +3,19 @@ from datetime import datetime
 
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
+from redis import Redis
 
 from ..common.queries import BaseQuery
-from .models import Subscription, Usage
-from .schemas import SubscriptionCreate, SubscriptionDetails, UsageDetails
-
-
-class UsageException(Exception):
-    pass
+from .models import Subscription
+from .schemas import SubscriptionCreate, SubscriptionDetails
+from .helpers import get_and_reset_balance_in_cache
 
 
 class SubscriptionException(Exception):
     pass
 
 
-class ApplicationQuery(BaseQuery):
+class SubscriptionQuery(BaseQuery):
     def create_subscription(self, subscription_create: SubscriptionCreate):
         # check existing subscription
         found_existing_subscription = True
@@ -36,20 +34,12 @@ class ApplicationQuery(BaseQuery):
         new_subscription = Subscription(
             username=subscription_create.username,
             application=subscription_create.application,
-            limit=subscription_create.limit,
+            credit=subscription_create.credit,
             expires_at=subscription_create.expires_at,
             recurring=subscription_create.recurring,
             created_by=subscription_create.created_by,
         )
         self.session.add(new_subscription)
-        new_usage = Usage(
-            username=subscription_create.username,
-            application=subscription_create.application,
-            usage=0,
-            starts_at=datetime.now(),
-            expires_at=subscription_create.expires_at,
-        )
-        self.session.add(new_usage)
         self.session.commit()
 
     def get_active_subscription(
@@ -74,7 +64,8 @@ class ApplicationQuery(BaseQuery):
         return SubscriptionDetails(
             username=username,
             application=application,
-            limit=subscription.limit,
+            credit=subscription.credit,
+            balance=subscription.balance,
             starts_at=subscription.starts_at,
             expires_at=subscription.expires_at,
             recurring=subscription.recurring,
@@ -100,91 +91,43 @@ class ApplicationQuery(BaseQuery):
                 SubscriptionDetails(
                     username=subscription.username,
                     application=subscription.application,
-                    limit=subscription.limit,
+                    credit=subscription.credit,
+                    balance=subscription.balance,
                     expires_at=subscription.expires_at,
                     recurring=subscription.recurring,
                 )
             )
         return data
 
-    def create_usage_from_subscription(self, subscription: SubscriptionCreate) -> Usage:
-        # TODO get_or_create_usage
-        # TODO try except rollback??
-        new_usage = Usage(
-            username=subscription.username,
-            application=subscription.application,
-            usage=0,
-            expires_at=subscription.expires_at,
-        )
-        self.session.add(new_usage)
-        self.session.commit()
-        return new_usage
-
-    def get_active_usage(self, username: str, application: str) -> UsageDetails:
-        # TODO get all results and verify if there is only one result
+    def update_balance_in_subscription(
+        self, username: str, application: str, redis: Redis
+    ) -> SubscriptionDetails:
         try:
-            usage = (
-                self.session.query(Usage)
+            subscription = (
+                self.session.query(Subscription)
                 .filter(
-                    Usage.username == username,
-                    Usage.application == application,
+                    Subscription.username == username,
+                    Subscription.application == application,
                     or_(
-                        Usage.expires_at.is_(None),
-                        Usage.expires_at > datetime.now(),
+                        Subscription.expires_at.is_(None),
+                        Subscription.expires_at > datetime.now(),
                     ),
                 )
                 .one()
             )
         except NoResultFound:
-            raise UsageException
+            raise SubscriptionException
 
-        return UsageDetails(
-            username=usage.username,
-            application=usage.application,
-            usage=usage.usage,
-            starts_at=usage.starts_at,
-            expires_at=usage.expires_at,
+        with get_and_reset_balance_in_cache(username, application, redis) as count:
+            subscription.balance += count
+            self.session.add(subscription)
+            self.session.commit()
+
+        return SubscriptionDetails(
+            username=subscription.username,
+            application=subscription.application,
+            credit=subscription.credit,
+            balance=subscription.balance,
+            expires_at=subscription.expires_at,
+            recurring=subscription.recurring,
         )
-
-    def get_active_usages(self, username: str) -> List[UsageDetails]:
-        try:
-            usages = self.session.query(Usage).filter(
-                Usage.username == username,
-                or_(
-                    Usage.expires_at.is_(None),
-                    Usage.expires_at > datetime.now(),
-                ),
-            )
-        except NoResultFound:
-            raise UsageException
-
-        data = []
-        for usage in usages:
-            data.append(
-                UsageDetails(
-                    username=usage.username,
-                    application=usage.application,
-                    usage=usage.usage,
-                    starts_at=usage.starts_at,
-                    expires_at=usage.expires_at,
-                )
-            )
-        return data
-
-    def get_history_usages(self, username: str, application: str) -> List[UsageDetails]:
-        usages = self.session.query(Usage).filter(
-            Usage.username == username,
-            Usage.application == application,
-        )
-        data = []
-        for usage in usages:
-            data.append(
-                UsageDetails(
-                    username=usage.username,
-                    application=usage.application,
-                    usage=usage.usage,
-                    starts_at=usage.starts_at,
-                    expires_at=usage.expires_at,
-                )
-            )
-        return data
