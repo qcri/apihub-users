@@ -118,8 +118,8 @@ class SubscriptionQuery(BaseQuery):
         except NoResultFound:
             raise SubscriptionException
 
-        with get_and_reset_balance_in_cache(username, application, redis) as count:
-            subscription.balance += count
+        with get_and_reset_balance_in_cache(username, application, redis) as balance:
+            subscription.balance = subscription.credit - balance
             self.session.add(subscription)
             self.session.commit()
 
@@ -130,4 +130,6 @@ class SubscriptionQuery(BaseQuery):
             balance=subscription.balance,
             expires_at=subscription.expires_at,
             recurring=subscription.recurring,
+            created_by=subscription.created_by,
+            created_at=subscription.created_at,
         )

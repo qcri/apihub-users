@@ -1,11 +1,15 @@
 from fastapi import HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT
 from redis import Redis
-from apihub_users.common.redis_session import redis_conn
-from apihub_users.subscription.helpers import make_key, USAGE_KEYS
+
+from ..common.db_session import create_session
+from ..common.redis_session import redis_conn
+from ..subscription.queries import SubscriptionQuery
+from ..subscription.helpers import make_key, BALANCE_KEYS
 
 
 HTTP_403_FORBIDDEN = 403
+HTTP_429_QUOTA = 429
 
 
 def require_subscription(application: str, Authorize: AuthJWT = Depends()) -> str:
@@ -23,12 +27,57 @@ def require_subscription(application: str, Authorize: AuthJWT = Depends()) -> st
 
 def update_subscription_balance(
     application: str,
+    username: str = Depends(require_subscription),
     redis: Redis = Depends(redis_conn),
-    username=Depends(require_subscription),
-) -> None:
-    """increment usage counter in redis"""
+    session=Depends(create_session),
+) -> str:
     key = make_key(username, application)
-    count = redis.incr(key)
-    if count == 1:
-        redis.sadd(USAGE_KEYS, key)
-    # TODO: for every 1k usage, check against subscription
+    balance = redis.decr(key)
+
+    if balance == -1:
+        subscription = SubscriptionQuery(session).get_active_subscription(
+            username, application
+        )
+        balance = subscription.credit - subscription.balance - 1
+        if balance > 0:
+            redis.set(key, balance)
+            redis.sadd(BALANCE_KEYS, key)
+
+    if balance <= 0:
+        subscription = SubscriptionQuery(session).update_balance_in_subscription(
+            username, application, redis
+        )
+
+    return username
+
+
+def require_subscription_balance(
+    application: str,
+    username: str = Depends(require_subscription),
+    redis: Redis = Depends(redis_conn),
+    session=Depends(create_session),
+) -> str:
+    key = make_key(username, application)
+    balance = redis.decr(key)
+
+    if balance == -1:
+        subscription = SubscriptionQuery(session).get_active_subscription(
+            username, application
+        )
+        balance = subscription.credit - subscription.balance - 1
+        if balance > 0:
+            redis.set(key, balance)
+            redis.sadd(BALANCE_KEYS, key)
+
+    if balance <= 0:
+        subscription = SubscriptionQuery(session).update_balance_in_subscription(
+            username, application, redis
+        )
+
+    if balance < 0:
+        raise HTTPException(
+            HTTP_429_QUOTA,
+            "You have used up all credit for this API",
+        )
+
+    return username

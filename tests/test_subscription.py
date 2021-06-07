@@ -11,6 +11,7 @@ from apihub_users.security.depends import require_user, require_admin, require_t
 from apihub_users.subscription.depends import (
     require_subscription,
     update_subscription_balance,
+    require_subscription_balance,
 )
 from apihub_users.subscription.models import Subscription
 from apihub_users.subscription.router import router, SubscriptionIn
@@ -59,7 +60,13 @@ def client(db_session):
     app.dependency_overrides[require_token] = _require_token
 
     @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
-    def api_function(application: str, username: str = Depends(require_subscription)):
+    def api_function_1(application: str, username: str = Depends(require_subscription)):
+        pass
+
+    @app.get("/api_balance/{application}")
+    def api_function_2(
+        application: str, username: str = Depends(require_subscription_balance)
+    ):
         pass
 
     yield TestClient(app)
@@ -122,7 +129,7 @@ class TestApplication:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="user", application="test", credit=1000)
+        SubscriptionFactory(username="user", application="test", credit=1)
 
         response = client.get(
             "/token/test",
@@ -132,3 +139,30 @@ class TestApplication:
 
         response = client.get("/api/test", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
+
+    def test_require_balance(self, client, db_session):
+        SubscriptionFactory._meta.sqlalchemy_session = db_session
+        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+
+        SubscriptionFactory(username="user", application="test", credit=2)
+
+        response = client.get(
+            "/token/test",
+        )
+        assert response.status_code == 200
+        token = response.json().get("token")
+
+        response = client.get(
+            "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+
+        response = client.get(
+            "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+
+        response = client.get(
+            "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 429
