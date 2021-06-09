@@ -39,7 +39,6 @@ doctest_optionflags= "NORMALIZE_WHITESPACE ELLIPSIS"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-prometheus-client = ">=0.7.0,<0.8.0"
 python-dotenv = "^0.17.1"
 redis = "^3.5.3"
 fastapi = "^0.65.1"
@@ -49,7 +48,6 @@ psycopg2-binary = "^2.8.6"
 SQLAlchemy = "^1.4.15"
 SQLAlchemy-Utils = "^0.37.4"
 python-multipart = "^0.0.5"
-tanbih-pipeline = "^0.11.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
