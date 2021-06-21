@@ -4,7 +4,7 @@ from redis import Redis
 
 
 class RedisSettings(BaseSettings):
-    redis: str
+    redis: str = "redis://localhost:6379"
 
 
 def redis_conn(settings: RedisSettings = RedisSettings()) -> Iterator[Redis]:

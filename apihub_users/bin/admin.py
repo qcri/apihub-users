@@ -6,8 +6,7 @@ from apihub_users.common.db_session import db_context, Base, DB_ENGINE
 from apihub_users.common.redis_session import redis_conn
 from apihub_users.security.schemas import UserCreate, UserType
 from apihub_users.security.queries import UserQuery
-from apihub_users.subscription.queries import SubscriptionQuery
-from apihub_users.subscription.helpers import USAGE_KEYS
+from apihub_users.usage.helpers import copy_yesterday_usage
 
 
 class SuperUser(BaseSettings):
@@ -40,12 +39,7 @@ def deinit():
     sys.stderr.write("deinit is done!")
 
 
-def add_usage_from_redis():
+def sync_usage():
     with redis_conn() as redis:
-        keys = redis.smembers(USAGE_KEYS)
         with db_context() as session:
-            query = SubscriptionQuery(session)
-            for key in keys:
-                _, username, application = key.split(":")
-                details = query.increment_usage(username, application, redis)
-                sys.stderr.write(details)
+            copy_yesterday_usage(redis, session)

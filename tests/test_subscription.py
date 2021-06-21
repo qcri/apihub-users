@@ -72,7 +72,7 @@ def client(db_session):
     yield TestClient(app)
 
 
-class TestApplication:
+class TestSubscription:
     def test_create_and_get_subscription(self, client):
         new_subscription = SubscriptionIn(
             username="tester",
