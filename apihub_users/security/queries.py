@@ -85,6 +85,7 @@ class UserQuery(BaseQuery):
         try:
             self.session.commit()
         except IntegrityError:
+            self.session.rollback()
             return False
 
         return True
