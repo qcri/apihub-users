@@ -1,5 +1,6 @@
 from typing import List
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import Query
 
@@ -81,8 +82,11 @@ class UserQuery(BaseQuery):
         """ """
         db_user = User(**user.make_user().dict())
         self.session.add(db_user)
-        self.session.commit()
-        # FIXME
+        try:
+            self.session.commit()
+        except IntegrityError:
+            return False
+
         return True
 
     def change_password(self, username: str, password: str) -> bool:

@@ -29,8 +29,10 @@ def init():
 
     with db_context() as session:
         user = SuperUser().as_usercreate()
-        UserQuery(session).create_user(user)
-        sys.stderr.write(f"Admin {user.username} is created!")
+        if UserQuery(session).create_user(user):
+            sys.stderr.write(f"Admin {user.username} is created!")
+        else:
+            sys.stderr.write(f"Admin {user.username} already exists!")
 
 
 def deinit():
