@@ -28,20 +28,20 @@ class SuperUser(BaseSettings):
 
 def init():
     Base.metadata.bind = DB_ENGINE
-    Base.metadata.create_all()
+    Base.metadata.create_all(bind=DB_ENGINE)
 
     with db_context() as session:
         user = SuperUser().as_usercreate()
         if UserQuery(session).create_user(user):
-            sys.stderr.write(f"Admin {user.username} is created!")
+            print(f"Admin {user.username} is created!", file=sys.stderr)
         else:
-            sys.stderr.write(f"Admin {user.username} already exists!")
+            print(f"Admin {user.username} already exists!", file=sys.stderr)
 
 
 def deinit():
     Base.metadata.bind = DB_ENGINE
-    Base.metadata.drop_all()
-    sys.stderr.write("deinit is done!")
+    Base.metadata.drop_all(bind=DB_ENGINE)
+    print("deinit is done!", file=sys.stderr)
 
 
 def sync_usage():
