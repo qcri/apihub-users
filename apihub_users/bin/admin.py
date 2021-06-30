@@ -7,6 +7,9 @@ from apihub_users.common.redis_session import redis_conn
 from apihub_users.security.schemas import UserCreate, UserType
 from apihub_users.security.queries import UserQuery
 from apihub_users.usage.helpers import copy_yesterday_usage
+from apihub_users.security.models import *  # noqa
+from apihub_users.subscription.models import *  # noqa
+from apihub_users.usage.models import *  # noqa
 
 
 class SuperUser(BaseSettings):
