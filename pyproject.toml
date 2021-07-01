@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apihub-users"
-version = "0.1.1-alpha.4"
+version = "0.1.1-alpha.5"
 description = "user and subscription management for APIHub"
 license = "MIT"
 authors = ["Yifan Zhang <freqyifan@gmail.com>"]
@@ -8,6 +8,7 @@ authors = ["Yifan Zhang <freqyifan@gmail.com>"]
 [tool.poetry.scripts]
 apihub_users_init="apihub_users.bin.admin:init"
 apihub_users_deinit="apihub_users.bin.admin:deinit"
+apihub_users_sync_usage="apihub_users.bin.admin:sync_usage"
 
 [tool.black]
 line-length = 88
