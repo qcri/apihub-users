@@ -3,7 +3,7 @@ import sys
 from pydantic import BaseSettings
 
 from apihub_users.common.db_session import db_context, Base, DB_ENGINE
-from apihub_users.common.redis_session import redis_conn
+from apihub_users.common.redis_session import redis_context
 from apihub_users.security.schemas import UserCreate, UserType
 from apihub_users.security.queries import UserQuery
 from apihub_users.usage.helpers import copy_yesterday_usage
@@ -45,6 +45,6 @@ def deinit():
 
 
 def sync_usage():
-    with redis_conn() as redis:
+    with redis_context() as redis:
         with db_context() as session:
             copy_yesterday_usage(redis, session)
