@@ -7,7 +7,7 @@ from fastapi_jwt_auth import AuthJWT
 
 from ..common.db_session import create_session
 from ..security.schemas import UserBase  # TODO create a model for this UserBase
-from ..security.depends import require_admin, require_user, require_token
+from ..security.depends import require_admin, require_token
 from .schemas import SubscriptionCreate
 from .queries import SubscriptionQuery, SubscriptionException
 
@@ -109,20 +109,36 @@ class SubscriptionTokenResponse(BaseModel):
 @router.get("/token/{application}")
 async def get_application_token(
     application: str,
-    username: str = Depends(require_user),
+    user: UserBase = Depends(require_token),
+    username: Optional[str] = None,
+    expires_days: Optional[
+        int
+    ] = SubscriptionSettings().subscription_token_expires_days,
     session=Depends(create_session),
 ):
     query = SubscriptionQuery(session)
+
+    if user.is_user:
+        username = user.username
+        expires_days = SubscriptionSettings().subscription_token_expires_days
+    else:
+        if username is None:
+            raise HTTPException(401, "username is missing")
+
     try:
         subscription = query.get_active_subscription(username, application)
     except SubscriptionException:
-        raise HTTPException(401, "NOt permitted")
+        raise HTTPException(401, f"No active subscription found for user {username}")
 
     if subscription.balance > subscription.credit:
         raise HTTPException(HTTP_429_TOO_MANY_REQUESTS, "You have used up your credit")
 
+    # limit token expire time to subscription expire time
+    subscription_expires_timedelta = subscription.expires_at - datetime.now()
+    if expires_days > subscription_expires_timedelta.days:
+        expires_days = subscription_expires_timedelta.days
+
     Authorize = AuthJWT()
-    expires_days = SubscriptionSettings().subscription_token_expires_days
     expires_time = timedelta(days=expires_days)
     access_token = Authorize.create_access_token(
         subject=username,
