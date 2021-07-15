@@ -48,8 +48,11 @@ def client(db_session):
     def _require_user():
         return "user"
 
-    def _require_token():
+    def _require_admin_token():
         return UserBase(username="tester", role=UserType.ADMIN)
+
+    def _require_user_token():
+        return UserBase(username="tester", role=UserType.USER)
 
     app = FastAPI()
     app.include_router(router)
@@ -57,7 +60,7 @@ def client(db_session):
     app.dependency_overrides[create_session] = _create_session
     app.dependency_overrides[require_admin] = _require_admin
     app.dependency_overrides[require_user] = _require_user
-    app.dependency_overrides[require_token] = _require_token
+    app.dependency_overrides[require_token] = _require_user_token
 
     @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
     def api_function_1(application: str, username: str = Depends(require_subscription)):
@@ -70,6 +73,14 @@ def client(db_session):
         pass
 
     yield TestClient(app)
+
+
+def _require_admin_token():
+    return UserBase(username="tester", role=UserType.ADMIN)
+
+
+def _require_user_token():
+    return UserBase(username="tester", role=UserType.USER)
 
 
 class TestSubscription:
@@ -97,12 +108,30 @@ class TestSubscription:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="user", application="app", credit=1000)
+        SubscriptionFactory(username="tester", application="app", credit=1000)
 
         response = client.get(
             "/token/app",
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
+        assert response.json().get("token") is not None
+
+    def test_get_application_token_admin(self, client, db_session):
+        client.app.dependency_overrides[require_token] = _require_admin_token
+        SubscriptionFactory._meta.sqlalchemy_session = db_session
+        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+
+        SubscriptionFactory(username="tester", application="app", credit=1000)
+
+        response = client.get(
+            "/token/app",
+            params={
+                "username": "tester",
+                "expires_days": 30,
+            },
+        )
+        client.app.dependency_overrides[require_token] = _require_user_token
+        assert response.status_code == 200, response.json()
         assert response.json().get("token") is not None
 
     def test_create_duplicate_subscription(self, client):
@@ -117,52 +146,52 @@ class TestSubscription:
             "/subscription",
             data=new_subscription.json(),
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
 
         response = client.post(
             "/subscription",
             data=new_subscription.json(),
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
 
     def test_update_balance(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="user", application="test", credit=1)
+        SubscriptionFactory(username="tester", application="test", credit=1)
 
         response = client.get(
             "/token/test",
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
         token = response.json().get("token")
 
         response = client.get("/api/test", headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
 
     def test_require_balance(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="user", application="test", credit=2)
+        SubscriptionFactory(username="tester", application="test", credit=2)
 
         response = client.get(
             "/token/test",
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
         token = response.json().get("token")
 
         response = client.get(
             "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
 
         response = client.get(
             "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.json()
 
         response = client.get(
             "/api_balance/test", headers={"Authorization": f"Bearer {token}"}
         )
-        assert response.status_code == 429
+        assert response.status_code == 429, response.json()
