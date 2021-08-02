@@ -122,6 +122,7 @@ class TestAuthenticate:
         response = client.get(
             "/_authenticate",
             headers=self._make_auth_header("tester", "password"),
+            params={"expires_days": 2},
         )
         assert response.status_code == 200
         assert AuthenticateResponse.parse_obj(response.json())
