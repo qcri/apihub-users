@@ -134,6 +134,17 @@ async def create_user(
     return {}
 
 
+@router.get("/users/{role}")
+async def list_users(
+    role: str,
+    current_username: str = Depends(require_admin),
+    session=Depends(create_session),
+):
+    query = UserQuery(session)
+    users = query.get_users_by_role(role)
+    return users
+
+
 @router.post("/user/{username}/_password")
 async def change_password_admin(
     username: str,

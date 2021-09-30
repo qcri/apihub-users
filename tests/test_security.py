@@ -223,6 +223,22 @@ class TestAuthenticate:
         assert response.status_code == 200
         assert len(response.json()) == 3
 
+    def test_list_users(self, client):
+        response = client.get(
+            "/_authenticate",
+            headers=self._make_auth_header("admin", "password"),
+        )
+        assert response.status_code == 200
+        auth_response = AuthenticateResponse.parse_obj(response.json())
+        token = auth_response.access_token
+
+        response = client.get(
+            "/users/admin",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
     def test_change_password_user(self, client):
         response = client.get(
             "/_authenticate",
