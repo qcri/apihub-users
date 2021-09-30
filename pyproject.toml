@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apihub-users"
-version = "0.1.1-alpha.7"
+version = "0.1.1-alpha.8"
 description = "user and subscription management for APIHub"
 license = "MIT"
 authors = ["Yifan Zhang <freqyifan@gmail.com>"]
