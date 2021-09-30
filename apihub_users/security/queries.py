@@ -6,7 +6,7 @@ from sqlalchemy.orm import Query
 
 from ..common.queries import BaseQuery
 from .models import User
-from .schemas import UserSession, UserCreate
+from .schemas import UserBase, UserSession, UserCreate
 from .helpers import hash_password
 
 
@@ -74,6 +74,20 @@ class UserQuery(BaseQuery):
                 role=user.role,
                 salt=user.salt,
                 hashed_password=user.hashed_password,
+            )
+            for user in users
+        ]
+
+    def get_users_by_role(self, role) -> List[UserBase]:
+        try:
+            users = self.get_query().filter(User.role == role)
+        except NoResultFound:
+            raise UserException
+
+        return [
+            UserBase(
+                username=user.username,
+                role=user.role,
             )
             for user in users
         ]
