@@ -18,6 +18,7 @@ router = APIRouter()
 
 
 class SubscriptionSettings(BaseSettings):
+    default_subscription_days: int = 30
     subscription_token_expires_days: int = 1
 
 
@@ -36,6 +37,11 @@ def create_subscription(
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
+    if subscription.expires_at is None:
+        subscription.expires_at = datetime.now() + timedelta(
+            days=SubscriptionSettings().default_subscription_days
+        )
+
     subscription_create = SubscriptionCreate(
         username=subscription.username,
         application=subscription.application,
