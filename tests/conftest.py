@@ -1,11 +1,14 @@
 import pytest
-from apihub_users.common.db_session import Base, DB_ENGINE
+from apihub_users.common.db_session import Base, get_db_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy_utils.functions import (
     database_exists,
     create_database,
     drop_database,
 )
+
+
+DB_ENGINE = get_db_engine()
 
 
 @pytest.fixture(scope="session")

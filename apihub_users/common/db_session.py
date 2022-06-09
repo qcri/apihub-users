@@ -14,17 +14,18 @@ class Settings(BaseSettings):
 Base: DeclarativeMeta = declarative_base()
 
 
-DB_ENGINE = sqlalchemy.engine_from_config(
-    {
-        "url": Settings().db_uri,
-        "echo": False,
-    },
-    prefix="",
-)
+def get_db_engine():
+    return sqlalchemy.engine_from_config(
+        {
+            "url": Settings().db_uri,
+            "echo": False,
+        },
+        prefix="",
+    )
 
 
 def create_session() -> Iterator[Session]:
-    session = sessionmaker(bind=DB_ENGINE)()
+    session = sessionmaker(bind=get_db_engine())()
 
     try:
         yield session
