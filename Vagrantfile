@@ -25,4 +25,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "shell", path: "./scripts/provisioning/install-system-requirements.sh"
   config.vm.provision "shell",  privileged: false,path: "./scripts/provisioning/install-python.sh"
+  config.vm.provision "shell", path: "./scripts/provisioning/postgres-config.sh"
+
 end
