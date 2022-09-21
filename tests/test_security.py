@@ -12,6 +12,9 @@ from fastapi_jwt_auth.exceptions import AuthJWTException
 
 from apihub_users.common.db_session import create_session
 from apihub_users.security.models import User
+# Don't remove these two lines.
+from apihub_users.subscription.models import Subscription, UserSubscription
+from apihub_users.usage.models import DailyUsage
 from apihub_users.security.queries import UserQuery
 from apihub_users.security.schemas import UserCreate, UserType, UserRegister
 from apihub_users.security.router import router, AuthenticateResponse

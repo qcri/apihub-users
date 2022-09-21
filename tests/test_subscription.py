@@ -1,36 +1,62 @@
 from datetime import datetime, timedelta
 
 import pytest
-import factory
 from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
-
+from apihub_users.security.models import User
+# don't remove these two lines.
+from apihub_users.subscription.models import Subscription, UserSubscription
+from apihub_users.usage.models import DailyUsage
 from apihub_users.common.db_session import create_session
 from apihub_users.security.schemas import UserBase, UserType
+from apihub_users.subscription.schemas import SubscriptionIn
 from apihub_users.security.depends import require_user, require_admin, require_token
-from apihub_users.subscription.depends import (
-    require_subscription,
-    update_subscription_balance,
-    require_subscription_balance,
-)
-from apihub_users.subscription.models import Subscription
-from apihub_users.subscription.router import router, SubscriptionIn
+from apihub_users.subscription.depends import require_subscription_balance
+from apihub_users.subscription.models import UserSubscription, Subscription
+from apihub_users.subscription.router import router
+import factory.fuzzy
 
 
-class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
+class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        abstract = True
+
+
+class UserFactory(BaseFactory):
+    class Meta:
+        model = User
+
+    id = factory.Sequence(int)
+    username = factory.Sequence(lambda n: f"tester{n}")
+    email = "sas@df.ds"
+    role = "admin"
+    is_active = True
+    created_at = factory.LazyFunction(datetime.now)
+
+
+class SubscriptionFactory(BaseFactory):
     class Meta:
         model = Subscription
 
     id = factory.Sequence(int)
-    username = factory.Sequence(lambda n: f"tester{n}")
+    recurring = False
     application = "test"
     credit = 100
+
+
+class UserSubscriptionFactory(BaseFactory):
+    class Meta:
+        model = UserSubscription
+
+    id = factory.Sequence(int)
+    username = factory.Sequence(lambda n: f"tester{n}")
+    application = "test"
+    # user = factory.SubFactory(UserFactory)
+    # subscription = factory.SubFactory(SubscriptionFactory)
     balance = 0
     starts_at = factory.LazyFunction(datetime.now)
     expires_at = factory.LazyFunction(lambda: datetime.now() + timedelta(days=1))
-    recurring = False
     created_at = factory.LazyFunction(datetime.now)
-    created_by = "admin"
     notes = None
 
 
@@ -104,11 +130,25 @@ class TestSubscription:
         assert response.status_code == 200
         assert response.json().get("credit") == 123
 
-    def test_get_application_token(self, client, db_session):
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+    def test_create_subscription_non_existing_user(self, client):
+        new_subscription = SubscriptionIn(
+            username="new user",
+            application="application",
+            credit=123,
+            expires_at=None,
+            recurring=False,
+        )
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 404
 
-        SubscriptionFactory(username="tester", application="app", credit=1000)
+    def test_get_application_token(self, client, db_session):
+        UserSubscriptionFactory._meta.sqlalchemy_session = db_session
+        UserSubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+
+        UserSubscriptionFactory(username="test", application="app", balance=100)
 
         response = client.get(
             "/token/app",
@@ -118,10 +158,10 @@ class TestSubscription:
 
     def test_get_application_token_admin(self, client, db_session):
         client.app.dependency_overrides[require_token] = _require_admin_token
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+        UserSubscriptionFactory._meta.sqlalchemy_session = db_session
+        UserSubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="app", credit=1000)
+        UserSubscriptionFactory(username="tester", application="app", credit=1000)
 
         response = client.get(
             "/token/app",
@@ -155,10 +195,10 @@ class TestSubscription:
         assert response.status_code == 200, response.json()
 
     def test_update_balance(self, client, db_session):
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+        UserSubscriptionFactory._meta.sqlalchemy_session = db_session
+        UserSubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", credit=1)
+        UserSubscriptionFactory(username="tester", application="test", credit=1)
 
         response = client.get(
             "/token/test",
@@ -170,10 +210,10 @@ class TestSubscription:
         assert response.status_code == 200, response.json()
 
     def test_require_balance(self, client, db_session):
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
+        UserSubscriptionFactory._meta.sqlalchemy_session = db_session
+        UserSubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", credit=2)
+        UserSubscriptionFactory(username="tester", application="test", credit=2)
 
         response = client.get(
             "/token/test",
