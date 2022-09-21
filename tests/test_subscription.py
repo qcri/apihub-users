@@ -88,15 +88,15 @@ def client(db_session):
     app.dependency_overrides[require_user] = _require_user
     app.dependency_overrides[require_token] = _require_user_token
 
-    @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
-    def api_function_1(application: str, username: str = Depends(require_subscription)):
-        pass
+    # @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
+    # def api_function_1(application: str, username: str = Depends(require_subscription)):
+    #     pass
 
-    @app.get("/api_balance/{application}")
-    def api_function_2(
-        application: str, username: str = Depends(require_subscription_balance)
-    ):
-        pass
+    # @app.get("/api_balance/{application}")
+    # def api_function_2(
+    #     application: str, username: str = Depends(require_subscription_balance)
+    # ):
+    #     pass
 
     yield TestClient(app)
 
