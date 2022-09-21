@@ -6,15 +6,16 @@ from sqlalchemy_utils.functions import (
     create_database,
     drop_database,
 )
-
+from apihub_users.common.db_session import settings
 
 DB_ENGINE = get_db_engine()
 
 
+
 @pytest.fixture(scope="session")
 def db_connection():
-    if database_exists(DB_ENGINE.url):
-        drop_database(DB_ENGINE.url)
+    if database_exists(settings.db_uri):
+        drop_database(settings.db_uri)
     create_database(DB_ENGINE.url)
 
     Base.metadata.bind = DB_ENGINE

@@ -9,9 +9,15 @@ class RedisSettings(BaseSettings):
 
 
 def redis_conn(settings: RedisSettings = RedisSettings()) -> Iterator[Redis]:
-    redis = Redis.from_url(settings.redis)
-    yield redis
-    redis.close()
+    try:
+        redis = Redis.from_url(settings.redis)
+    except Exception as e:
+        raise e
+    try:
+        yield redis
+        redis.close()
+    except:
+        redis.close()
 
 
 redis_context: Callable[[], ContextManager[Redis]] = contextmanager(redis_conn)
