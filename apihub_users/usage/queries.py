@@ -1,6 +1,7 @@
 from typing import List
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
+from ..subscription.models import UserSubscription
 
 from ..common.queries import BaseQuery
 from .models import DailyUsage
@@ -12,13 +13,15 @@ class UsageException(Exception):
 
 
 class UsageQuery(BaseQuery):
-    def create_usage(self, usage_create: UsageCreate) -> None:
+    def create_usage(self, usage_create: UsageCreate):
+        us = self.session.query(UserSubscription) \
+            .filter(UserSubscription.application == usage_create.user_subscription.application,
+                    UserSubscription.username == usage_create.user_subscription.username).one()
         new_usage = DailyUsage(
             date=usage_create.date,
-            username=usage_create.username,
-            application=usage_create.application,
-            usage=usage_create.usage,
-        )
+            user_subscription_id=us.id,
+            user_subscription=us,
+            usage=usage_create.usage)
         self.session.add(new_usage)
         self.session.commit()
 
@@ -27,8 +30,8 @@ class UsageQuery(BaseQuery):
     ) -> List[UsageDetails]:
         try:
             usages = self.session.query(DailyUsage).filter(
-                DailyUsage.username == username,
-                DailyUsage.application == application,
+                DailyUsage.user_subscription.username == username,
+                DailyUsage.user_subscription.application == application,
             )
         except NoResultFound:
             return []
@@ -38,8 +41,8 @@ class UsageQuery(BaseQuery):
             data.append(
                 UsageDetails(
                     date=usage.date,
-                    username=usage.username,
-                    application=usage.application,
+                    username=username,
+                    application=application,
                     usage=usage.usage,
                 )
             )
@@ -48,7 +51,7 @@ class UsageQuery(BaseQuery):
     def get_daily_usages(self, username: str) -> List[UsageDetails]:
         try:
             usages = self.session.query(DailyUsage).filter(
-                DailyUsage.username == username,
+                DailyUsage.user_subscription.username == username,
             )
         except NoResultFound:
             return []
@@ -58,8 +61,8 @@ class UsageQuery(BaseQuery):
             data.append(
                 UsageDetails(
                     date=usage.date,
-                    username=usage.username,
-                    application=usage.application,
+                    username=username,
+                    application=usage.user_subscription.application,
                     usage=usage.usage,
                 )
             )
