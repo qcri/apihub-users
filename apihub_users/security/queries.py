@@ -18,6 +18,13 @@ class UserQuery(BaseQuery):
     def get_query(self) -> Query:
         return self.session.query(User)
 
+    def check_username(self, username: str) -> bool:
+        try:
+            self.get_query().filter(User.username == username).one()
+            return True
+        except:
+            return False
+
     def get_user_by_id(self, user_id: int) -> UserSession:
         user = self.get_query().filter(User.id == user_id).one()
         return UserSession(

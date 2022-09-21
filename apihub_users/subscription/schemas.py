@@ -1,7 +1,6 @@
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
-
-from pydantic import BaseModel
 
 
 class SubscriptionBase(BaseModel):
@@ -9,16 +8,37 @@ class SubscriptionBase(BaseModel):
 
 
 class SubscriptionCreate(SubscriptionBase):
-    username: str
     application: str
     credit: int
-    starts_at: datetime = datetime.now()
-    expires_at: Optional[datetime] = None
     recurring: bool = False
-    created_by: str
-    notes: Optional[str] = None
 
 
 class SubscriptionDetails(SubscriptionCreate):
-    created_at: datetime
-    balance: int
+    application: str
+    credit: int
+
+
+class SubscriptionIn(BaseModel):
+    username: str
+    application: str
+    credit: int
+    recurring: bool = False
+    expires_at: Optional[datetime] = None
+
+
+class UserSubscriptionBase(BaseModel):
+    pass
+
+
+class UserSubscriptionCreate(UserSubscriptionBase):
+    username: str
+    application: str
+    balance: Optional[int] = 0
+    expires_at: Optional[datetime] = None
+    created_by: str
+    recurring: bool
+    credit: int
+
+
+class UserSubscriptionDetails(UserSubscriptionCreate):
+    pass
