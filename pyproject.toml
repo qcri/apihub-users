@@ -48,6 +48,8 @@ psycopg2-binary = "^2.8.6"
 SQLAlchemy = "^1.4.15"
 SQLAlchemy-Utils = "^0.37.4"
 python-multipart = "^0.0.5"
+FastAPI-SQLAlchemy = "^0.2.1"
+sqladmin = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
