@@ -1,135 +1,146 @@
 from typing import List
-from datetime import datetime
-
 from sqlalchemy import or_
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 from redis import Redis
 
 from ..common.queries import BaseQuery
-from .models import Subscription
-from .schemas import SubscriptionCreate, SubscriptionDetails
+from .models import UserSubscription, Subscription
+from .schemas import *
 from .helpers import get_and_reset_balance_in_cache
 
 
-class SubscriptionException(Exception):
+class UserSubscriptionException(Exception):
     pass
 
 
-class SubscriptionQuery(BaseQuery):
-    def create_subscription(self, subscription_create: SubscriptionCreate):
-        # check existing subscription
-        found_existing_subscription = True
+class UserSubscriptionQuery(BaseQuery):
+
+    def create_or_get_subscription(self, subscription_create: SubscriptionCreate):
         try:
-            self.get_active_subscription(
-                subscription_create.username, subscription_create.application
-            )
-        except SubscriptionException:
-            found_existing_subscription = False
+            return self.get_subscription(subscription_create.application)
+        except:
+            try:
+                new_subscription = Subscription(
+                    application=subscription_create.application,
+                    credit=subscription_create.credit,
+                    recurring=subscription_create.recurring,
+                )
+                self.session.add(new_subscription)
+                self.session.commit()
+            except Exception as e:
+                raise e
 
-        if found_existing_subscription:
-            raise SubscriptionException(
-                "Found existing subscription, please delete it before create new subscription"
-            )
-
-        new_subscription = Subscription(
-            username=subscription_create.username,
-            application=subscription_create.application,
-            credit=subscription_create.credit,
-            expires_at=subscription_create.expires_at,
-            recurring=subscription_create.recurring,
-            created_by=subscription_create.created_by,
-        )
-        self.session.add(new_subscription)
-        self.session.commit()
-
-    def get_active_subscription(
-        self, username: str, application: str
-    ) -> SubscriptionDetails:
+    def get_subscription(self, application: str) -> SubscriptionDetails:
         try:
             subscription = (
                 self.session.query(Subscription)
-                .filter(
-                    Subscription.username == username,
-                    Subscription.application == application,
-                    or_(
-                        Subscription.expires_at.is_(None),
-                        Subscription.expires_at > datetime.now(),
-                    ),
-                )
-                .one()
-            )
+                .filter(Subscription.application == application).one())
         except NoResultFound:
-            raise SubscriptionException
+            raise UserSubscriptionException
 
         return SubscriptionDetails(
-            username=username,
             application=application,
             credit=subscription.credit,
-            balance=subscription.balance,
-            starts_at=subscription.starts_at,
-            expires_at=subscription.expires_at,
-            recurring=subscription.recurring,
-            created_by=subscription.created_by,
-            created_at=subscription.created_at,
-        )
+            recurring=subscription.recurring)
 
-    def get_active_subscriptions(self, username: str) -> List[SubscriptionDetails]:
+    def create_user_subscription(self, usc: UserSubscriptionCreate):
         try:
-            subscriptions = self.session.query(Subscription).filter(
-                Subscription.username == username,
+            sc = SubscriptionCreate(application=usc.application, credit=usc.credit,
+                                    reccuring=usc.recurring)
+            self.create_or_get_subscription(sc)
+            us = UserSubscription(
+                username=usc.username,
+                application=usc.application,
+                balance=usc.balance,
+                expires_at=usc.expires_at,
+                created_by=usc.created_by,
+            )
+            self.session.add(us)
+            self.session.commit()
+        except UserSubscriptionException:
+            raise UserSubscriptionException
+
+    def get_active_user_subscription(self, username: str,
+                                     application: str) -> UserSubscriptionDetails:
+
+        try:
+            us = (self.session.query(UserSubscription)
+                  .filter(
+                UserSubscription.username == username,
+                UserSubscription.application == application,
                 or_(
-                    Subscription.expires_at.is_(None),
-                    Subscription.expires_at > datetime.now(),
+                    UserSubscription.expires_at.is_(None),
+                    UserSubscription.expires_at > datetime.now(),
+                ),
+            ).one())
+
+        except NoResultFound:
+            raise UserSubscriptionException
+
+        return UserSubscriptionDetails(
+            username=us.username,
+            application=us.application,
+            credit=us.subscription.credit,
+            balance=us.balance,
+            expires_at=us.expires_at,
+            recurring=us.subscription.recurring,
+            created_by=us.created_by,
+            created_at=us.created_at)
+
+    def get_active_user_subscriptions(self, username: str) -> List[UserSubscriptionDetails]:
+        try:
+            uss = self.session.query(UserSubscription).filter(
+                UserSubscription.username == username,
+                or_(
+                    UserSubscription.expires_at.is_(None),
+                    UserSubscription.expires_at > datetime.now(),
                 ),
             )
         except NoResultFound:
-            raise SubscriptionException
+            raise UserSubscriptionException
 
         data = []
-        for subscription in subscriptions:
-            data.append(
-                SubscriptionDetails(
-                    username=subscription.username,
-                    application=subscription.application,
-                    credit=subscription.credit,
-                    balance=subscription.balance,
-                    expires_at=subscription.expires_at,
-                    recurring=subscription.recurring,
-                )
-            )
+        for us in uss:
+            us_details = UserSubscriptionDetails(
+                username=us.username,
+                application=us.application,
+                credit=us.subscription.credit,
+                balance=us.balance,
+                expires_at=us.expires_at,
+                recurring=us.subscription.recurring,
+                created_by=us.subscription.created_by,
+                created_at=us.created_at)
+            data.append(us_details)
+
         return data
 
-    def update_balance_in_subscription(
-        self, username: str, application: str, redis: Redis
-    ) -> SubscriptionDetails:
+    def update_balance_in_user_subscription(self, username: str,
+                                            application: str,
+                                            redis: Redis) -> UserSubscriptionDetails:
         try:
-            subscription = (
-                self.session.query(Subscription)
-                .filter(
-                    Subscription.username == username,
-                    Subscription.application == application,
-                    or_(
-                        Subscription.expires_at.is_(None),
-                        Subscription.expires_at > datetime.now(),
-                    ),
-                )
-                .one()
-            )
+            us = (self.session.query(UserSubscription)
+                  .filter(
+                UserSubscription.username == username,
+                UserSubscription.application == application,
+                or_(
+                    UserSubscription.expires_at.is_(None),
+                    UserSubscription.expires_at > datetime.now(),
+                ),
+            ).one())
         except NoResultFound:
-            raise SubscriptionException
+            raise UserSubscriptionException
 
         with get_and_reset_balance_in_cache(username, application, redis) as balance:
-            subscription.balance = subscription.credit - balance
-            self.session.add(subscription)
+            us.balance = us.subscription.credit - balance
+            self.session.add(us)
             self.session.commit()
 
-        return SubscriptionDetails(
-            username=subscription.username,
-            application=subscription.application,
-            credit=subscription.credit,
-            balance=subscription.balance,
-            expires_at=subscription.expires_at,
-            recurring=subscription.recurring,
-            created_by=subscription.created_by,
-            created_at=subscription.created_at,
-        )
+        return UserSubscriptionDetails(
+            username=us.username,
+            application=us.application,
+            credit=us.subscription.credit,
+            balance=us.balance,
+            expires_at=us.expires_at,
+            recurring=us.subscription.recurring,
+            created_by=us.subscription.created_by,
+            created_at=us.created_at)

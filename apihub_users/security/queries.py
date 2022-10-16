@@ -1,11 +1,12 @@
 from typing import List
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import Query
 
 from ..common.queries import BaseQuery
 from .models import User
-from .schemas import UserSession, UserCreate
+from .schemas import UserBase, UserSession, UserCreate
 from .helpers import hash_password
 
 
@@ -16,6 +17,13 @@ class UserException(Exception):
 class UserQuery(BaseQuery):
     def get_query(self) -> Query:
         return self.session.query(User)
+
+    def check_username(self, username: str) -> bool:
+        try:
+            self.get_query().filter(User.username == username).one()
+            return True
+        except:
+            return False
 
     def get_user_by_id(self, user_id: int) -> UserSession:
         user = self.get_query().filter(User.id == user_id).one()
@@ -77,12 +85,30 @@ class UserQuery(BaseQuery):
             for user in users
         ]
 
+    def get_users_by_role(self, role) -> List[UserBase]:
+        try:
+            users = self.get_query().filter(User.role == role)
+        except NoResultFound:
+            raise UserException
+
+        return [
+            UserBase(
+                username=user.username,
+                role=user.role,
+            )
+            for user in users
+        ]
+
     def create_user(self, user: UserCreate) -> bool:
         """ """
         db_user = User(**user.make_user().dict())
         self.session.add(db_user)
-        self.session.commit()
-        # FIXME
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            return False
+
         return True
 
     def change_password(self, username: str, password: str) -> bool:

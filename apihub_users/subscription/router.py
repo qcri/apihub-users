@@ -1,42 +1,39 @@
-from datetime import datetime, timedelta
-from typing import Optional
-
-from pydantic import BaseModel, BaseSettings
+from datetime import timedelta
+from pydantic import BaseSettings
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 
 from ..common.db_session import create_session
 from ..security.schemas import UserBase  # TODO create a model for this UserBase
-from ..security.depends import require_admin, require_user, require_token
-from .schemas import SubscriptionCreate
-from .queries import SubscriptionQuery, SubscriptionException
-
-
+from ..security.depends import require_admin, require_token
+from .queries import *
+from apihub_users.security.queries import UserQuery
 HTTP_429_TOO_MANY_REQUESTS = 429
 
 router = APIRouter()
 
 
 class SubscriptionSettings(BaseSettings):
+    default_subscription_days: int = 30
     subscription_token_expires_days: int = 1
-
-
-# FIXME move this to schemas
-class SubscriptionIn(BaseModel):
-    username: str
-    application: str
-    credit: int
-    expires_at: Optional[datetime] = None
-    recurring: bool = False
 
 
 @router.post("/subscription")
 def create_subscription(
-    subscription: SubscriptionIn,
-    username: str = Depends(require_admin),
-    session=Depends(create_session),
+        subscription: SubscriptionIn,
+        username: str = Depends(require_admin),
+        session=Depends(create_session),
 ):
-    subscription_create = SubscriptionCreate(
+    if subscription.expires_at is None:
+        subscription.expires_at = datetime.now() + timedelta(
+            days=SubscriptionSettings().default_subscription_days
+        )
+
+    user_query = UserQuery(session)
+    if not user_query.check_username(username):
+        raise HTTPException(status_code=404, detail="This user is not registered.")
+
+    us_create = UserSubscriptionCreate(
         username=subscription.username,
         application=subscription.application,
         credit=subscription.credit,
@@ -46,43 +43,39 @@ def create_subscription(
         created_by=username,
     )
     try:
-        query = SubscriptionQuery(session)
-        query.create_subscription(subscription_create)
-        return subscription_create
-    except SubscriptionException:
+        query = UserSubscriptionQuery(session)
+        query.create_user_subscription(us_create)
+        return us_create
+    except UserSubscriptionException:
         return {}
 
 
 @router.get("/subscription/{application}")
 def get_active_subscription(
-    application: str,
-    user: UserBase = Depends(require_token),
-    session=Depends(create_session),
+        application: str,
+        user: UserBase = Depends(require_token),
+        session=Depends(create_session),
 ):
-    query = SubscriptionQuery(session)
+    query = UserSubscriptionQuery(session)
     try:
-        subscription = query.get_active_subscription(user.username, application)
-    except SubscriptionException:
+        return query.get_active_user_subscription(user.username, application)
+    except UserSubscriptionException:
         return {}
-
-    return subscription
 
 
 @router.get("/subscription")
 def get_active_subscriptions(
-    user: UserBase = Depends(require_token),
-    session=Depends(create_session),
-):
-    if user.is_user:
-        username = user.username
-
-    query = SubscriptionQuery(session)
-    try:
-        subscriptions = query.get_active_subscriptions(username)
-    except SubscriptionException:
+        user: UserBase = Depends(require_token),
+        session=Depends(create_session)):
+    if not user.is_user:
         return []
 
-    return subscriptions
+    username = user.username
+    query = UserSubscriptionQuery(session)
+    try:
+        return query.get_active_user_subscriptions(username)
+    except UserSubscriptionException:
+        return []
 
 
 # delete plan
@@ -99,7 +92,9 @@ def get_active_subscriptions(
 # get usage summary
 
 # get ap your limitplication token
-class SubscriptionTokenResponse(BaseModel):
+
+
+class UserSubscriptionTokenResponse(BaseModel):
     username: str
     application: str
     token: str
@@ -108,28 +103,43 @@ class SubscriptionTokenResponse(BaseModel):
 
 @router.get("/token/{application}")
 async def get_application_token(
-    application: str,
-    username: str = Depends(require_user),
-    session=Depends(create_session),
+        application: str,
+        user: UserBase = Depends(require_token),
+        username: Optional[str] = None,
+        expires_days: Optional[
+            int
+        ] = SubscriptionSettings().subscription_token_expires_days,
+        session=Depends(create_session),
 ):
-    query = SubscriptionQuery(session)
-    try:
-        subscription = query.get_active_subscription(username, application)
-    except SubscriptionException:
-        raise HTTPException(401, "NOt permitted")
+    query = UserSubscriptionQuery(session)
 
-    if subscription.balance > subscription.credit:
+    if user.is_user:
+        username = user.username
+        expires_days = SubscriptionSettings().subscription_token_expires_days
+    else:
+        if username is None:
+            raise HTTPException(401, "username is missing")
+    try:
+        us = query.get_active_user_subscription(username, application)
+    except UserSubscriptionException:
+        raise HTTPException(401, f"No active subscription found for user {username}")
+
+    if us.balance > us.credit:
         raise HTTPException(HTTP_429_TOO_MANY_REQUESTS, "You have used up your credit")
 
+    # limit token expire time to subscription expire time
+    subscription_expires_timedelta = us.expires_at - datetime.now()
+    if expires_days > subscription_expires_timedelta.days:
+        expires_days = subscription_expires_timedelta.days
+
     Authorize = AuthJWT()
-    expires_days = SubscriptionSettings().subscription_token_expires_days
     expires_time = timedelta(days=expires_days)
     access_token = Authorize.create_access_token(
         subject=username,
         user_claims={"subscription": application},
         expires_time=expires_time,
     )
-    return SubscriptionTokenResponse(
+    return UserSubscriptionTokenResponse(
         username=username,
         application=application,
         token=access_token,

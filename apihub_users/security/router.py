@@ -19,7 +19,7 @@ HTTP_403_FORBIDDEN = 403
 
 class SecuritySettings(BaseSettings):
     authjwt_secret_key: str = "secret"
-    security_token_expires_time: int = 1
+    security_token_expires_time: int = 30
 
 
 @AuthJWT.load_config
@@ -37,6 +37,7 @@ class AuthenticateResponse(BaseModel):
 @router.get("/_authenticate")
 async def _authenticate(
     credentials: HTTPBasicCredentials = Depends(security),
+    expires_days: int = 1,
     session=Depends(create_session),
 ):
     query = UserQuery(session)
@@ -50,8 +51,11 @@ async def _authenticate(
 
     roles = [user.role]
 
+    # make sure the max expires_days won't exceed setting
+    if expires_days > SecuritySettings().security_token_expires_time:
+        expires_days = SecuritySettings().security_token_expires_time
+
     Authorize = AuthJWT()
-    expires_days = SecuritySettings().security_token_expires_time
     expires_time = datetime.timedelta(days=expires_days)
     access_token = Authorize.create_access_token(
         subject=user.username,
@@ -128,6 +132,17 @@ async def create_user(
     query.create_user(new_user)
     # TODO handling results
     return {}
+
+
+@router.get("/users/{role}")
+async def list_users(
+    role: str,
+    current_username: str = Depends(require_admin),
+    session=Depends(create_session),
+):
+    query = UserQuery(session)
+    users = query.get_users_by_role(role)
+    return users
 
 
 @router.post("/user/{username}/_password")

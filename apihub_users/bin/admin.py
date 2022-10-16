@@ -2,12 +2,17 @@ import sys
 
 from pydantic import BaseSettings
 
-from apihub_users.common.db_session import db_context, Base, DB_ENGINE
-from apihub_users.common.redis_session import redis_conn
-from apihub_users.security.schemas import UserCreate, UserType
+from apihub_users.common.db_session import db_context, get_db_engine
+from apihub_users.common.redis_session import redis_context
+from apihub_users.security.schemas import UserCreate
 from apihub_users.security.queries import UserQuery
-from apihub_users.subscription.queries import SubscriptionQuery
-from apihub_users.subscription.helpers import USAGE_KEYS
+from apihub_users.usage.helpers import copy_yesterday_usage
+from apihub_users.security.models import *  # noqa
+from apihub_users.subscription.models import *  # noqa
+from apihub_users.usage.models import *  # noqa
+
+
+DB_ENGINE = get_db_engine()
 
 
 class SuperUser(BaseSettings):
@@ -26,26 +31,23 @@ class SuperUser(BaseSettings):
 
 def init():
     Base.metadata.bind = DB_ENGINE
-    Base.metadata.create_all()
+    Base.metadata.create_all(bind=DB_ENGINE)
 
     with db_context() as session:
         user = SuperUser().as_usercreate()
-        UserQuery(session).create_user(user)
-        sys.stderr.write(f"Admin {user.username} is created!")
+        if UserQuery(session).create_user(user):
+            print(f"Admin {user.username} is created!", file=sys.stderr)
+        else:
+            print(f"Admin {user.username} already exists!", file=sys.stderr)
 
 
 def deinit():
     Base.metadata.bind = DB_ENGINE
-    Base.metadata.drop_all()
-    sys.stderr.write("deinit is done!")
+    Base.metadata.drop_all(bind=DB_ENGINE)
+    print("deinit is done!", file=sys.stderr)
 
 
-def add_usage_from_redis():
-    with redis_conn() as redis:
-        keys = redis.smembers(USAGE_KEYS)
+def sync_usage():
+    with redis_context() as redis:
         with db_context() as session:
-            query = SubscriptionQuery(session)
-            for key in keys:
-                _, username, application = key.split(":")
-                details = query.increment_usage(username, application, redis)
-                sys.stderr.write(details)
+            copy_yesterday_usage(redis, session)

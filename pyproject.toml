@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apihub-users"
-version = "0.1.1-alpha.1"
+version = "0.1.1-alpha.8"
 description = "user and subscription management for APIHub"
 license = "MIT"
 authors = ["Yifan Zhang <freqyifan@gmail.com>"]
@@ -8,6 +8,7 @@ authors = ["Yifan Zhang <freqyifan@gmail.com>"]
 [tool.poetry.scripts]
 apihub_users_init="apihub_users.bin.admin:init"
 apihub_users_deinit="apihub_users.bin.admin:deinit"
+apihub_users_sync_usage="apihub_users.bin.admin:sync_usage"
 
 [tool.black]
 line-length = 88
@@ -39,8 +40,7 @@ doctest_optionflags= "NORMALIZE_WHITESPACE ELLIPSIS"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-python-dotenv = "^0.17.1"
-redis = "^3.5.3"
+redis = "^4.0.0"
 fastapi = "^0.65.1"
 uvicorn = "^0.13.4"
 fastapi-jwt-auth = "^0.5.0"
@@ -48,6 +48,8 @@ psycopg2-binary = "^2.8.6"
 SQLAlchemy = "^1.4.15"
 SQLAlchemy-Utils = "^0.37.4"
 python-multipart = "^0.0.5"
+FastAPI-SQLAlchemy = "^0.2.1"
+sqladmin = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
