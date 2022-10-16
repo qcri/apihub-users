@@ -23,7 +23,7 @@ class User(Base):
     role = Column(Enum(UserType), default=UserType.ADMIN)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now())
-
+    # Subscription back_populate.
     subscriptions = relationship("Subscription", back_populates="user")
 
     def __str__(self):

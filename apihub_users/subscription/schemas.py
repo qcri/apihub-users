@@ -1,6 +1,16 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from enum import Enum
+
+
+class ApplicationType(str, Enum):
+    API1_TRIAL = "api1_trial"
+    API1_PREMIUM = "api1_premium"
+    API2_TRIAL = "api2_trial"
+    API2_PREMIUM = "api2_premium"
+    API3_TRIAL = "api3_trial"
+    API3_PREMIUM = "api3_premium"
 
 
 class SubscriptionBase(BaseModel):

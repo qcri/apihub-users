@@ -15,7 +15,7 @@ class DailyUsage(Base):
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, default=datetime.now())
     usage = Column(Integer, default=0)
-
+    # Subscription table FK.
     application = Column(Integer, ForeignKey("subscription.application"))
     subscription = relationship("Subscription", back_populates="daily_usages")
 
