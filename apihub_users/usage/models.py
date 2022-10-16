@@ -16,9 +16,9 @@ class DailyUsage(Base):
     date = Column(Date, default=datetime.now())
     usage = Column(Integer, default=0)
 
-    user_subscription_id = Column(Integer, ForeignKey("association.id"))
-    user_subscription = relationship("UserSubscription", back_populates="daily_usages")
+    application = Column(Integer, ForeignKey("subscription.application"))
+    subscription = relationship("Subscription", back_populates="daily_usages")
 
     def __str__(self):
-        return f"DailyUsage username={self.user_subscription.username} " \
-                f"application={self.user_subscription.application} usage={self.usage}"
+        return f"DailyUsage username={self.subscription.username} " \
+                f"application={self.application} usage={self.usage}"

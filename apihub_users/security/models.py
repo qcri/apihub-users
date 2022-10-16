@@ -24,7 +24,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now())
 
-    subscriptions = relationship("UserSubscription", back_populates="user")
+    subscriptions = relationship("Subscription", back_populates="user")
 
     def __str__(self):
         return f"User username={self.username} role={self.role}"
