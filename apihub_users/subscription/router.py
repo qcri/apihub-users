@@ -10,6 +10,7 @@ from ..security.schemas import UserBase  # TODO create a model for this UserBase
 from ..security.depends import require_admin, require_token
 from .schemas import SubscriptionCreate
 from .queries import SubscriptionQuery, SubscriptionException
+from apihub_users.security.queries import UserQuery
 
 
 HTTP_429_TOO_MANY_REQUESTS = 429
@@ -41,6 +42,10 @@ def create_subscription(
         subscription.expires_at = datetime.now() + timedelta(
             days=SubscriptionSettings().default_subscription_days
         )
+
+    user_query = UserQuery(session)
+    if not user_query.check_username(username):
+        raise HTTPException(status_code=401, detail="This user is not registered.")
 
     subscription_create = SubscriptionCreate(
         username=subscription.username,

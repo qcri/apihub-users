@@ -1,9 +1,7 @@
 from typing import List
 
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Query
-
 from ..common.queries import BaseQuery
 from .models import User
 from .schemas import UserBase, UserSession, UserCreate
@@ -17,6 +15,13 @@ class UserException(Exception):
 class UserQuery(BaseQuery):
     def get_query(self) -> Query:
         return self.session.query(User)
+
+    def check_username(self, username: str) -> bool:
+        try:
+            self.get_query().filter(User.username == username).one()
+            return True
+        except NoResultFound:
+            return False
 
     def get_user_by_id(self, user_id: int) -> UserSession:
         user = self.get_query().filter(User.id == user_id).one()
