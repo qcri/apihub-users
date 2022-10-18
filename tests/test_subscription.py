@@ -84,6 +84,20 @@ def _require_user_token():
 
 
 class TestSubscription:
+    def test_create_subscription_non_existing_user(self, client):
+        new_subscription = SubscriptionIn(
+            username="not existing user",
+            application="app 1",
+            credit=100,
+            expires_at=None,
+            recurring=False,
+        )
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 401
+
     def test_create_and_get_subscription(self, client):
         new_subscription = SubscriptionIn(
             username="tester",
