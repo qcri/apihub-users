@@ -4,7 +4,7 @@ import pytest
 import factory
 from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
-
+from .test_security import UserFactory
 from apihub_users.common.db_session import create_session
 from apihub_users.security.schemas import UserBase, UserType
 from apihub_users.security.depends import require_user, require_admin, require_token
@@ -97,6 +97,25 @@ class TestSubscription:
             data=new_subscription.json(),
         )
         assert response.status_code == 401
+
+
+    def test_create_subscription_existing_user(self, client, db_session):
+        UserFactory._meta.sqlalchemy_session = db_session
+        UserFactory._meta.sqlalchemy_session_persistence = "commit"
+        UserFactory(username="tester", email="user@user.com", role=UserType.USER)
+
+        new_subscription = SubscriptionIn(
+            username="tester",
+            application="app 1",
+            credit=100,
+            expires_at=None,
+            recurring=False,
+        )
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 200
 
     def test_create_and_get_subscription(self, client):
         new_subscription = SubscriptionIn(
