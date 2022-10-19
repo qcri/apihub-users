@@ -8,6 +8,7 @@ from fastapi_jwt_auth import AuthJWT
 from ..common.db_session import create_session
 from ..security.schemas import UserBase  # TODO create a model for this UserBase
 from ..security.depends import require_admin, require_token
+from ..security.queries import UserQuery, UserException
 from .schemas import SubscriptionCreate
 from .queries import SubscriptionQuery, SubscriptionException
 
@@ -37,6 +38,12 @@ def create_subscription(
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
+    # make sure the username exists
+    try:
+        UserQuery(session).get_user_by_username(subscription.username)
+    except UserException:
+        raise HTTPException(401, f"User {subscription.username} not found")
+
     if subscription.expires_at is None:
         subscription.expires_at = datetime.now() + timedelta(
             days=SubscriptionSettings().default_subscription_days
