@@ -1,13 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    Integer,
-    String,
-    DateTime,
-)
-
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from ..common.db_session import Base
 
 
@@ -15,7 +9,6 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, index=True)
     application = Column(String, index=True)
     credit = Column(Integer)
     balance = Column(Integer, default=0)
@@ -25,3 +18,6 @@ class Subscription(Base):
     created_at = Column(DateTime, default=datetime.now())
     created_by = Column(String)
     notes = Column(String)
+    # User table FK.
+    username = Column(String, ForeignKey("user.username"))
+    user = relationship("User", back_populates="subscriptions")
