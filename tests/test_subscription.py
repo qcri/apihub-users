@@ -111,6 +111,20 @@ class TestSubscription:
         assert response.status_code == 200
         assert response.json().get("credit") == 123
 
+    def test_create_subscription_not_existing_user(self, client):
+        new_subscription = SubscriptionIn(
+            username="not existing user",
+            application="app 1",
+            credit=100,
+            expires_at=None,
+            recurring=False,
+        )
+        response = client.post(
+            "/subscription",
+            data=new_subscription.json(),
+        )
+        assert response.status_code == 401
+
     def test_get_application_token(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
