@@ -16,6 +16,8 @@ from apihub_users.subscription.depends import (
 from apihub_users.subscription.models import Subscription
 from apihub_users.subscription.router import router, SubscriptionIn
 
+from .test_security import UserFactory
+
 
 class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -71,6 +73,11 @@ def client(db_session):
         application: str, username: str = Depends(require_subscription_balance)
     ):
         pass
+
+    UserFactory._meta.sqlalchemy_session = db_session
+    UserFactory._meta.sqlalchemy_session_persistence = "commit"
+
+    UserFactory(username="tester", role=UserType.USER)
 
     yield TestClient(app)
 
