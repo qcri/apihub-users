@@ -159,7 +159,7 @@ class TestSubscription:
             "/subscription",
             data=new_subscription.json(),
         )
-        assert response.status_code == 200, response.json()
+        assert response.status_code == 403, response.json()
 
     def test_update_balance(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
