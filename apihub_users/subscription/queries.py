@@ -51,7 +51,7 @@ class SubscriptionQuery(BaseQuery):
     ) -> SubscriptionDetails:
         try:
             subscription = (
-                self.session.query(Subscription)
+                self.get_query()
                 .filter(
                     Subscription.username == username,
                     Subscription.application == application,
@@ -79,7 +79,7 @@ class SubscriptionQuery(BaseQuery):
 
     def get_active_subscriptions(self, username: str) -> List[SubscriptionDetails]:
         try:
-            subscriptions = self.session.query(Subscription).filter(
+            subscriptions = self.get_query().filter(
                 Subscription.username == username,
                 or_(
                     Subscription.expires_at.is_(None),
@@ -108,7 +108,7 @@ class SubscriptionQuery(BaseQuery):
     ) -> SubscriptionDetails:
         try:
             subscription = (
-                self.session.query(Subscription)
+                self.get_query()
                 .filter(
                     Subscription.username == username,
                     Subscription.application == application,
