@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 
 from pydantic import BaseModel
+
+
+class SubscriptionType(str, Enum):
+    TRIAL = "trial"
+    NORMAL = "normal"
+    PREMIUM = "premium"
 
 
 class SubscriptionBase(BaseModel):

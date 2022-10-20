@@ -38,11 +38,22 @@ def create_subscription(
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
-    # make sure the username exists
+    # make sure the username exists.
     try:
         UserQuery(session).get_user_by_username(subscription.username)
     except UserException:
-        raise HTTPException(401, f"User {subscription.username} not found")
+        raise HTTPException(401, f"User {subscription.username} not found.")
+
+    # make sure the application is not currently active.
+    try:
+        SubscriptionQuery(session).get_active_subscription(
+            subscription.username, subscription.application
+        )
+        raise HTTPException(
+            403, f"Application {subscription.application} already exists."
+        )
+    except SubscriptionException:
+        pass
 
     if subscription.expires_at is None:
         subscription.expires_at = datetime.now() + timedelta(
