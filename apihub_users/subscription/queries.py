@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 from redis import Redis
+from sqlalchemy.orm import Query
 
 from ..common.queries import BaseQuery
 from .models import Subscription
@@ -16,6 +17,9 @@ class SubscriptionException(Exception):
 
 
 class SubscriptionQuery(BaseQuery):
+    def get_query(self) -> Query:
+        return self.session.query(Subscription)
+
     def create_subscription(self, subscription_create: SubscriptionCreate):
         # check existing subscription
         found_existing_subscription = True
