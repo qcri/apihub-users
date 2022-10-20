@@ -2,12 +2,12 @@ from typing import List
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import Query
 
 from ..common.queries import BaseQuery
 from .models import User
 from .schemas import UserBase, UserSession, UserCreate
 from .helpers import hash_password
+from sqlalchemy.orm import Query
 
 
 class UserException(Exception):
