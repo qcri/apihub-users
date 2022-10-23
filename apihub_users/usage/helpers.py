@@ -1,8 +1,10 @@
 from datetime import date, datetime
 
-from .queries import UsageQuery
-from .schemas import UsageCreate
+from fastapi import Depends
 
+from .queries import UsageQuery, ActivityLogQuery
+from .schemas import UsageCreate, ActivityLogCreate
+from ..common.db_session import create_session
 
 USAGE_KEY = "dailyusage"
 
@@ -27,3 +29,18 @@ def copy_yesterday_usage(redis, session):
             )
             query.create_usage(usage)
             redis.hdel(USAGE_KEY, k)
+
+
+def create_activity_log(request: str, session=Depends(create_session), **kwargs):
+    kwargs["request"] = request
+    al_q = ActivityLogQuery(session)
+    al_q.create_activity_log(
+        ActivityLogCreate(
+            request=request,
+            status=kwargs.get("status"),
+            username=kwargs.get("username"),
+            request_type=kwargs.get("request_type"),
+            body=kwargs.get("body"),
+            params=kwargs.get("params"),
+        )
+    )
