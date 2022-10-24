@@ -50,10 +50,6 @@ async def _authenticate(
         )
         kwargs["username"] = user.username
     except UserException:
-        kwargs["status"] = "403"
-        background_tasks.add_task(
-            create_activity_log, request="/_authenticate", **kwargs
-        )
         raise HTTPException(HTTP_403_FORBIDDEN, "User not found or wrong password")
 
     roles = [user.role]
@@ -69,7 +65,6 @@ async def _authenticate(
         user_claims={"roles": roles},
         expires_time=expires_time,
     )
-    kwargs["status"] = "200"
     background_tasks.add_task(create_activity_log, request="/_authenticate", **kwargs)
     return AuthenticateResponse(
         username=user.username,
