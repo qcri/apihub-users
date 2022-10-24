@@ -24,7 +24,6 @@ class ActivityLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.now())
     request = Column(String, nullable=False)
-    status = Column(String)
     username = Column(String, index=True)
     request_type = Column(String)
     body = Column(String)

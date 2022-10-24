@@ -25,7 +25,6 @@ class ActivityLogBase(BaseModel):
 
 class ActivityLogCreate(ActivityLogBase):
     request: str
-    status: Optional[str] = None
     username: Optional[str] = None
     request_type: Optional[str] = None
     body: Optional[str] = None
@@ -34,7 +33,6 @@ class ActivityLogCreate(ActivityLogBase):
     def activity_log_schema(self):
         return ActivityLogCreate(
             request=self.request,
-            status=self.status,
             username=self.username,
             request_type=self.request_type,
             body=self.body,
