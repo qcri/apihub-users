@@ -26,8 +26,7 @@ class ActivityLog(Base):
     request = Column(String, nullable=False)
     username = Column(String, index=True)
     request_type = Column(String)
-    body = Column(String)
-    params = Column(String)
+    ip_address = Column(String)
 
     def __str__(self):
         return f"{self.request} || {self.username}"
