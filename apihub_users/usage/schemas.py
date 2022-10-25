@@ -27,16 +27,14 @@ class ActivityLogCreate(ActivityLogBase):
     request: str
     username: Optional[str] = None
     request_type: Optional[str] = None
-    body: Optional[str] = None
-    params: Optional[str] = None
+    ip_address: Optional[str] = None
 
     def activity_log_schema(self):
         return ActivityLogCreate(
             request=self.request,
             username=self.username,
             request_type=self.request_type,
-            body=self.body,
-            params=self.params,
+            ip_address=self.ip_address,
         )
 
 

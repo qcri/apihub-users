@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from pydantic import BaseModel, BaseSettings
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from fastapi_jwt_auth import AuthJWT
 
 from ..common.db_session import create_session
@@ -11,6 +11,7 @@ from ..security.depends import require_admin, require_token
 from ..security.queries import UserQuery, UserException
 from .schemas import SubscriptionCreate
 from .queries import SubscriptionQuery, SubscriptionException
+from ..usage.helpers import create_activity_log
 
 
 HTTP_429_TOO_MANY_REQUESTS = 429
@@ -34,13 +35,17 @@ class SubscriptionIn(BaseModel):
 
 @router.post("/subscription")
 def create_subscription(
+    request: Request,
+    background_tasks: BackgroundTasks,
     subscription: SubscriptionIn,
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
+    kwargs = {"request_type": "post", "ip_address": request.client.host}
     # make sure the username exists.
     try:
         UserQuery(session).get_user_by_username(subscription.username)
+        kwargs["username"] = subscription.username
     except UserException:
         raise HTTPException(401, f"User {subscription.username} not found.")
 
@@ -72,6 +77,9 @@ def create_subscription(
     try:
         query = SubscriptionQuery(session)
         query.create_subscription(subscription_create)
+        background_tasks.add_task(
+            create_activity_log, "/subscription", session, **kwargs
+        )
         return subscription_create
     except SubscriptionException:
         return {}
@@ -79,26 +87,40 @@ def create_subscription(
 
 @router.get("/subscription/{application}")
 def get_active_subscription(
+    request: Request,
+    background_tasks: BackgroundTasks,
     application: str,
     user: UserBase = Depends(require_token),
     session=Depends(create_session),
 ):
+
+    kwargs = {"request_type": "get", "ip_address": request.client.host}
     query = SubscriptionQuery(session)
     try:
         subscription = query.get_active_subscription(user.username, application)
+        kwargs["username"] = user.username
     except SubscriptionException:
         return {}
 
+    background_tasks.add_task(
+        create_activity_log, f"/subscription/{application}", session, **kwargs
+    )
     return subscription
 
 
 @router.get("/subscription")
 def get_active_subscriptions(
+    request: Request,
+    background_tasks: BackgroundTasks,
     user: UserBase = Depends(require_token),
     session=Depends(create_session),
 ):
+    kwargs = {"request_type": "get", "ip_address": request.client.host}
     if user.is_user:
         username = user.username
+        kwargs["username"] = username
+    else:
+        return []
 
     query = SubscriptionQuery(session)
     try:
@@ -106,6 +128,7 @@ def get_active_subscriptions(
     except SubscriptionException:
         return []
 
+    background_tasks.add_task(create_activity_log, "/subscription", session, **kwargs)
     return subscriptions
 
 

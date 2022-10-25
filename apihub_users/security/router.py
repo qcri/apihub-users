@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from pydantic import BaseModel, BaseSettings
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi_jwt_auth import AuthJWT
 
@@ -9,7 +9,6 @@ from ..common.db_session import create_session
 from .schemas import UserCreate, UserBase, UserRegister, UserType
 from .queries import UserQuery, UserException
 from .depends import require_token, require_admin, require_app
-from ..usage.helpers import create_activity_log
 
 security = HTTPBasic()
 router = APIRouter()
@@ -36,19 +35,16 @@ class AuthenticateResponse(BaseModel):
 
 @router.get("/_authenticate")
 async def _authenticate(
-    background_tasks: BackgroundTasks,
     credentials: HTTPBasicCredentials = Depends(security),
     expires_days: int = 1,
     session=Depends(create_session),
 ):
     query = UserQuery(session)
-    kwargs = {"request_type": "get"}
     try:
         user = query.get_user_by_username_and_password(
             username=credentials.username,
             password=credentials.password,
         )
-        kwargs["username"] = user.username
     except UserException:
         raise HTTPException(HTTP_403_FORBIDDEN, "User not found or wrong password")
 
@@ -65,7 +61,6 @@ async def _authenticate(
         user_claims={"roles": roles},
         expires_time=expires_time,
     )
-    background_tasks.add_task(create_activity_log, request="/_authenticate", **kwargs)
     return AuthenticateResponse(
         username=user.username,
         roles=roles,

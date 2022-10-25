@@ -39,7 +39,6 @@ def create_activity_log(request: str, session=Depends(create_session), **kwargs)
             request=request,
             username=kwargs.get("username"),
             request_type=kwargs.get("request_type"),
-            body=kwargs.get("body"),
-            params=kwargs.get("params"),
+            ip_address=kwargs.get("ip_address"),
         )
     )
