@@ -7,6 +7,7 @@ from .schemas import Status
 from ..common.db_session import Base, get_db_engine
 from .queries import ActivityQuery
 
+
 class SessionCreator:
     session = sessionmaker(bind=get_db_engine())()
     activity_query = ActivityQuery(session)
@@ -44,7 +45,9 @@ class Activity(Base):
 
     @staticmethod
     def update_activity(key, **kwargs):
-        activity = SessionCreator.activity_query.get_query().filter(Activity.key == key).one()
+        activity = (
+            SessionCreator.activity_query.get_query().filter(Activity.key == key).one()
+        )
         activity = activity.dict(exclude_unset=True)
         for key, value in kwargs.items():
             setattr(activity, key, value)
