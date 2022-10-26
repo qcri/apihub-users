@@ -15,8 +15,8 @@ from apihub_users.subscription.depends import (
 )
 from apihub_users.subscription.models import Subscription
 from apihub_users.subscription.router import router, SubscriptionIn
-from apihub_users.usage.queries import ActivityLogQuery
-from apihub_users.usage.models import ActivityLog
+from apihub_users.usage.queries import ActivityQuery
+from apihub_users.usage.models import Activity
 from .test_security import UserFactory
 
 
@@ -112,41 +112,21 @@ class TestSubscription:
         assert response.status_code == 200
         assert response.json().get("credit") == 123
 
-        al_query = ActivityLogQuery(UserFactory._meta.sqlalchemy_session)
+        al_query = ActivityQuery(UserFactory._meta.sqlalchemy_session)
         al_create = (
             al_query.get_query()
             .filter(
-                ActivityLog.request == "/subscription",
-                ActivityLog.request_type == "post",
+                Activity.request == "/subscription",
             )
             .one()
         )
-        al_get = (
-            al_query.get_query()
-            .filter(
-                ActivityLog.request == "/subscription/application",
-                ActivityLog.request_type == "get",
-            )
-            .one()
-        )
-        assert al_create and al_get
+        assert al_create
 
     def test_get_all_subscriptions(self, client):
         response = client.get(
             "/subscription",
         )
         assert response.status_code == 200
-
-        al_query = ActivityLogQuery(UserFactory._meta.sqlalchemy_session)
-        al_all = (
-            al_query.get_query()
-            .filter(
-                ActivityLog.request == "/subscription",
-                ActivityLog.request_type == "get",
-            )
-            .one()
-        )
-        assert al_all
 
     def test_create_subscription_not_existing_user(self, client):
         new_subscription = SubscriptionIn(
