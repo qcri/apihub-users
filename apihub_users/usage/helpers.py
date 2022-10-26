@@ -42,5 +42,6 @@ def create_activity_log(session=Depends(create_session), **kwargs):
             key=kwargs.get("key"),
             result=kwargs.get("result"),
             latency=kwargs.get("latency"),
+            status=kwargs.get("status"),
         )
     )
