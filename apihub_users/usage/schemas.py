@@ -37,6 +37,7 @@ class ActivityCreate(ActivityBase):
     key: Optional[str] = None
     result: Optional[str] = None
     latency: Optional[float] = None
+    status: Optional[str] = None
 
     def activity_log_schema(self):
         return ActivityCreate(
@@ -47,6 +48,7 @@ class ActivityCreate(ActivityBase):
             key=self.key,
             result=self.result,
             latency=self.latency,
+            status=self.status,
         )
 
 
