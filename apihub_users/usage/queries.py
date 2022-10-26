@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from ..common.queries import BaseQuery
 from .models import DailyUsage, Activity
-from .schemas import UsageDetails, UsageCreate, ActivityCreate
+from .schemas import UsageDetails, UsageCreate, ActivityCreate, ActivityDetails
 
 
 class UsageException(Exception):
@@ -86,3 +86,16 @@ class ActivityQuery(BaseQuery):
             return False
 
         return True
+
+    def get_activity_by_key(self, key: str) -> ActivityDetails:
+        activity = self.get_query().filter(Activity.key == key).one()
+        return ActivityDetails(
+            created_at=activity.created_at,
+            application=activity.application,
+            request=activity.request,
+            ip_address=activity.ip_address,
+            key=activity.key,
+            result=activity.result,
+            status=activity.status,
+            latency=activity.latency,
+        )
