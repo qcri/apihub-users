@@ -1,9 +1,15 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
+from sqlalchemy.orm import sessionmaker
 
 from .schemas import Status
-from ..common.db_session import Base
+from ..common.db_session import Base, get_db_engine
+from .queries import ActivityQuery
+
+class SessionCreator:
+    session = sessionmaker(bind=get_db_engine())()
+    activity_query = ActivityQuery(session)
 
 
 class DailyUsage(Base):
@@ -35,3 +41,14 @@ class Activity(Base):
 
     def __str__(self):
         return f"{self.request} || {self.username}"
+
+    @staticmethod
+    def update_activity(key, **kwargs):
+        activity = SessionCreator.activity_query.get_query().filter(Activity.key == key).one()
+        activity = activity.dict(exclude_unset=True)
+        for key, value in kwargs.items():
+            setattr(activity, key, value)
+
+        SessionCreator.session.add(activity)
+        SessionCreator.session.commit()
+        SessionCreator.session.refresh(activity)
