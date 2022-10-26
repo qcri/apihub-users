@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Date, DateTime, Float
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
 
+from .schemas import Status
 from ..common.db_session import Base
 
 
@@ -25,6 +26,7 @@ class Activity(Base):
     created_at = Column(DateTime, default=datetime.now())
     username = Column(String, index=True)
     application = Column(String, index=True)
+    status = Column(Enum(Status), default=Status.ACCEPTED)
     key = Column(String)
     request = Column(String)
     result = Column(String)
