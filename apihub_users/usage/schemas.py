@@ -19,24 +19,30 @@ class UsageDetails(UsageCreate):
     pass
 
 
-class ActivityLogBase(BaseModel):
+class ActivityBase(BaseModel):
     pass
 
 
-class ActivityLogCreate(ActivityLogBase):
+class ActivityCreate(ActivityBase):
     request: str
     username: Optional[str] = None
-    request_type: Optional[str] = None
+    application: Optional[str] = None
     ip_address: Optional[str] = None
+    key: Optional[str] = None
+    result: Optional[str] = None
+    latency: Optional[float] = None
 
     def activity_log_schema(self):
-        return ActivityLogCreate(
+        return ActivityCreate(
             request=self.request,
             username=self.username,
-            request_type=self.request_type,
+            application=self.application,
             ip_address=self.ip_address,
+            key=self.key,
+            result=self.result,
+            latency=self.latency,
         )
 
 
-class ActivityLogDetails(ActivityLogCreate):
+class ActivityDetails(ActivityCreate):
     created_at: str

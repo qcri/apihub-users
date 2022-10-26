@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float
 
 from ..common.db_session import Base
 
@@ -18,15 +18,18 @@ class DailyUsage(Base):
         return f"{self.application} || {self.username} || {self.usage}"
 
 
-class ActivityLog(Base):
-    __tablename__ = "activity_logs"
+class Activity(Base):
+    __tablename__ = "activity"
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.now())
-    request = Column(String, nullable=False)
     username = Column(String, index=True)
-    request_type = Column(String)
+    application = Column(String, index=True)
+    key = Column(String)
+    request = Column(String)
+    result = Column(String)
     ip_address = Column(String)
+    latency = Column(Float)
 
     def __str__(self):
         return f"{self.request} || {self.username}"

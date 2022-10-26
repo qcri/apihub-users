@@ -4,8 +4,8 @@ from sqlalchemy.orm import Query
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from ..common.queries import BaseQuery
-from .models import DailyUsage, ActivityLog
-from .schemas import UsageDetails, UsageCreate, ActivityLogCreate
+from .models import DailyUsage, Activity
+from .schemas import UsageDetails, UsageCreate, ActivityCreate
 
 
 class UsageException(Exception):
@@ -67,17 +67,17 @@ class UsageQuery(BaseQuery):
         return data
 
 
-class ActivityLogException(Exception):
+class ActivityException(Exception):
     pass
 
 
-class ActivityLogQuery(BaseQuery):
+class ActivityQuery(BaseQuery):
     def get_query(self) -> Query:
-        return self.session.query(ActivityLog)
+        return self.session.query(Activity)
 
-    def create_activity_log(self, activity_log: ActivityLogCreate) -> bool:
+    def create_activity_helper(self, activity_log: ActivityCreate) -> bool:
         """ """
-        db_al = ActivityLog(**activity_log.activity_log_schema().dict())
+        db_al = Activity(**activity_log.activity_log_schema().dict())
         self.session.add(db_al)
         try:
             self.session.commit()
