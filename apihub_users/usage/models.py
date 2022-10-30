@@ -24,12 +24,13 @@ class Activity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.now())
-    username = Column(String, index=True)
-    application = Column(String, index=True)
-    status = Column(Enum(Status), default=Status.ACCEPTED)
-    key = Column(String)
     request = Column(String)
+    username = Column(String)
+    subscription_type = Column(String)
+    status = Column(Enum(Status), default=Status.ACCEPTED)
+    request_key = Column(String)
     result = Column(String)
+    payload = Column(String)
     ip_address = Column(String)
     latency = Column(Float)
 

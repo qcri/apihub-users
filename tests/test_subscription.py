@@ -13,10 +13,8 @@ from apihub_users.subscription.depends import (
     update_subscription_balance,
     require_subscription_balance,
 )
-from apihub_users.subscription.models import Subscription
+from apihub_users.subscription.models import Subscription, SubscriptionType
 from apihub_users.subscription.router import router, SubscriptionIn
-from apihub_users.usage.queries import ActivityQuery
-from apihub_users.usage.models import Activity
 from .test_security import UserFactory
 
 
@@ -27,6 +25,7 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
+    subscription_type = SubscriptionType.TRIAL
     credit = 100
     balance = 0
     starts_at = factory.LazyFunction(datetime.now)
@@ -96,6 +95,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
+            subscription_type=SubscriptionType.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -112,16 +112,6 @@ class TestSubscription:
         assert response.status_code == 200
         assert response.json().get("credit") == 123
 
-        al_query = ActivityQuery(UserFactory._meta.sqlalchemy_session)
-        al_create = (
-            al_query.get_query()
-            .filter(
-                Activity.request == "/subscription",
-            )
-            .one()
-        )
-        assert al_create
-
     def test_get_all_subscriptions(self, client):
         response = client.get(
             "/subscription",
@@ -132,6 +122,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="not existing user",
             application="app 1",
+            subscription_type=SubscriptionType.TRIAL,
             credit=100,
             expires_at=None,
             recurring=False,
@@ -176,6 +167,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
+            subscription_type=SubscriptionType.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -196,7 +188,7 @@ class TestSubscription:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", credit=1)
+        SubscriptionFactory(username="tester", application="test", subscription_type=SubscriptionType.TRIAL, credit=1)
 
         response = client.get(
             "/token/test",
@@ -211,7 +203,7 @@ class TestSubscription:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", credit=2)
+        SubscriptionFactory(username="tester", application="test", subscription_type=SubscriptionType.TRIAL, credit=2)
 
         response = client.get(
             "/token/test",

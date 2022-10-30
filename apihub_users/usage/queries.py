@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 
 from sqlalchemy.orm import Query
@@ -77,7 +78,7 @@ class ActivityQuery(BaseQuery):
 
     def create_activity_helper(self, activity_log: ActivityCreate) -> bool:
         """ """
-        db_al = Activity(**activity_log.activity_log_schema().dict())
+        db_al = Activity(**activity_log.make_activity().dict())
         self.session.add(db_al)
         try:
             self.session.commit()
@@ -88,15 +89,16 @@ class ActivityQuery(BaseQuery):
         return True
 
     def get_activity_by_key(self, key: str) -> ActivityDetails:
-        activity = self.get_query().filter(Activity.key == key).one()
+        activity = self.get_query().filter(Activity.request_key == key).one()
         return ActivityDetails(
             created_at=activity.created_at,
-            application=activity.application,
             request=activity.request,
-            ip_address=activity.ip_address,
-            key=activity.key,
-            result=activity.result,
+            subscription_type=activity.subscription_type,
             status=activity.status,
+            request_key=activity.request_key,
+            result=activity.result,
+            payload=activity.payload,
+            ip_address=activity.ip_address,
             latency=activity.latency,
         )
 
@@ -104,10 +106,13 @@ class ActivityQuery(BaseQuery):
 
         return self.get_query().filter_by(**kwargs).count()
 
-    def update_activity(self, key, **kwargs) -> bool:
+    def update_activity(self, key, set_latency=True, **kwargs) -> bool:
         activity = (
-            self.get_query().filter(Activity.key == key).one()
+            self.get_query().filter(Activity.request_key == key).one()
         )
+        if set_latency:
+            kwargs["latency"] = (datetime.datetime.now() - activity.created_at).seconds
+
         activity = activity.dict(exclude_unset=True)
         for key, value in kwargs.items():
             setattr(activity, key, value)
