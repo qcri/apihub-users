@@ -78,7 +78,7 @@ class ActivityQuery(BaseQuery):
 
     def create_activity_helper(self, activity_log: ActivityCreate) -> bool:
         """ """
-        db_al = Activity(**activity_log.make_activity().dict())
+        db_al = Activity(**activity_log.dict())
         self.session.add(db_al)
         try:
             self.session.commit()

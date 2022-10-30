@@ -2,12 +2,6 @@ from datetime import date
 
 from typing import Optional
 from pydantic import BaseModel
-from enum import Enum
-
-
-class Status(str, Enum):
-    ACCEPTED = "accepted"
-    PROCESSED = "processed"
 
 
 class UsageBase(BaseModel):

@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from .queries import UsageQuery, ActivityQuery
 from .schemas import UsageCreate, ActivityCreate
-from ..common.db_session import create_session
+from apihub_users.common.db_session import create_session
 
 USAGE_KEY = "dailyusage"
 
@@ -31,7 +31,7 @@ def copy_yesterday_usage(redis, session):
             redis.hdel(USAGE_KEY, k)
 
 
-def create_activity_log(session=Depends(create_session), **kwargs):
+def create_activity(session=Depends(create_session), **kwargs):
     al_q = ActivityQuery(session)
     return al_q.create_activity_helper(
         ActivityCreate(
