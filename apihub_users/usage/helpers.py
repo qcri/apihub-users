@@ -33,7 +33,7 @@ def copy_yesterday_usage(redis, session):
 
 def create_activity_log(session=Depends(create_session), **kwargs):
     al_q = ActivityQuery(session)
-    al_q.create_activity_helper(
+    return al_q.create_activity_helper(
         ActivityCreate(
             request=kwargs.get("request"),
             username=kwargs.get("username"),
