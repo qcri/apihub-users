@@ -68,6 +68,7 @@ class SubscriptionQuery(BaseQuery):
         return SubscriptionDetails(
             username=username,
             application=application,
+            subscription_type=subscription.subscription_type,
             credit=subscription.credit,
             balance=subscription.balance,
             starts_at=subscription.starts_at,
@@ -95,6 +96,7 @@ class SubscriptionQuery(BaseQuery):
                 SubscriptionDetails(
                     username=subscription.username,
                     application=subscription.application,
+                    subscription_type=subscription.subscription_type,
                     credit=subscription.credit,
                     balance=subscription.balance,
                     expires_at=subscription.expires_at,
@@ -130,6 +132,7 @@ class SubscriptionQuery(BaseQuery):
         return SubscriptionDetails(
             username=subscription.username,
             application=subscription.application,
+            subscription_type=subscription.subscription_type,
             credit=subscription.credit,
             balance=subscription.balance,
             expires_at=subscription.expires_at,

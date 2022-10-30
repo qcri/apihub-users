@@ -37,11 +37,12 @@ def create_activity_log(session=Depends(create_session), **kwargs):
         ActivityCreate(
             request=kwargs.get("request"),
             username=kwargs.get("username"),
-            ip_address=kwargs.get("ip_address"),
-            application=kwargs.get("application"),
-            key=kwargs.get("key"),
-            result=kwargs.get("result"),
-            latency=kwargs.get("latency"),
+            subscription_type=kwargs.get("subscription_type"),
             status=kwargs.get("status"),
+            request_key=kwargs.get("request_key"),
+            result=kwargs.get("result"),
+            payload=kwargs.get("payload"),
+            ip_address=kwargs.get("ip_address"),
+            latency=kwargs.get("latency"),
         )
     )

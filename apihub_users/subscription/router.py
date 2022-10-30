@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from typing import Optional
-import time
 
 from pydantic import BaseModel, BaseSettings
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
@@ -12,7 +11,6 @@ from ..security.depends import require_admin, require_token
 from ..security.queries import UserQuery, UserException
 from .schemas import SubscriptionCreate
 from .queries import SubscriptionQuery, SubscriptionException
-from ..usage.helpers import create_activity_log
 
 
 HTTP_429_TOO_MANY_REQUESTS = 429
@@ -29,6 +27,7 @@ class SubscriptionSettings(BaseSettings):
 class SubscriptionIn(BaseModel):
     username: str
     application: str
+    subscription_type: str
     credit: int
     expires_at: Optional[datetime] = None
     recurring: bool = False
@@ -36,23 +35,14 @@ class SubscriptionIn(BaseModel):
 
 @router.post("/subscription")
 def create_subscription(
-    request: Request,
-    background_tasks: BackgroundTasks,
     subscription: SubscriptionIn,
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
-    t1 = time.time()
-    kwargs = {
-        "request": "/subscription",
-        "application": subscription.application,
-        "ip_address": request.client.host,
-    }
 
     # make sure the username exists.
     try:
         UserQuery(session).get_user_by_username(subscription.username)
-        kwargs["username"] = subscription.username
     except UserException:
         raise HTTPException(401, f"User {subscription.username} not found.")
 
@@ -75,6 +65,7 @@ def create_subscription(
     subscription_create = SubscriptionCreate(
         username=subscription.username,
         application=subscription.application,
+        subscription_type=subscription.subscription_type,
         credit=subscription.credit,
         starts_at=datetime.now(),
         expires_at=subscription.expires_at,
@@ -84,9 +75,6 @@ def create_subscription(
     try:
         query = SubscriptionQuery(session)
         query.create_subscription(subscription_create)
-        t2 = time.time()
-        kwargs["latency"] = round(t2 - t1, 2)
-        background_tasks.add_task(create_activity_log, session, **kwargs)
         return subscription_create
     except SubscriptionException:
         return {}
