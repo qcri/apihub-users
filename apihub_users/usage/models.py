@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float
 
-from .schemas import Status
 from ..common.db_session import Base
 
 
@@ -27,7 +26,7 @@ class Activity(Base):
     request = Column(String)
     username = Column(String)
     subscription_type = Column(String)
-    status = Column(Enum(Status), default=Status.ACCEPTED)
+    status = Column(String)
     request_key = Column(String)
     result = Column(String)
     payload = Column(String)
