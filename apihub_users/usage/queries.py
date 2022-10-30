@@ -99,3 +99,27 @@ class ActivityQuery(BaseQuery):
             status=activity.status,
             latency=activity.latency,
         )
+
+    def get_activities_count(self, **kwargs) -> int:
+
+        return self.get_query().filter_by(**kwargs).count()
+
+    def update_activity(self, key, **kwargs) -> bool:
+        activity = (
+            self.get_query().filter(Activity.key == key).one()
+        )
+        activity = activity.dict(exclude_unset=True)
+        for key, value in kwargs.items():
+            setattr(activity, key, value)
+
+        self.session.add(activity)
+        try:
+            self.session.commit()
+            self.session.refresh(activity)
+        except IntegrityError:
+            self.session.rollback()
+            return False
+
+        return True
+
+
