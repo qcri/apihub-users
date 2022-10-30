@@ -188,7 +188,12 @@ class TestSubscription:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", subscription_type=SubscriptionType.TRIAL, credit=1)
+        SubscriptionFactory(
+            username="tester",
+            application="test",
+            subscription_type=SubscriptionType.TRIAL,
+            credit=1,
+        )
 
         response = client.get(
             "/token/test",
@@ -203,7 +208,12 @@ class TestSubscription:
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", subscription_type=SubscriptionType.TRIAL, credit=2)
+        SubscriptionFactory(
+            username="tester",
+            application="test",
+            subscription_type=SubscriptionType.TRIAL,
+            credit=2,
+        )
 
         response = client.get(
             "/token/test",

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from pydantic import BaseModel, BaseSettings
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
 
 from ..common.db_session import create_session

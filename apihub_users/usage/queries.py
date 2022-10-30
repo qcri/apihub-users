@@ -107,9 +107,7 @@ class ActivityQuery(BaseQuery):
         return self.get_query().filter_by(**kwargs).count()
 
     def update_activity(self, key, set_latency=True, **kwargs) -> bool:
-        activity = (
-            self.get_query().filter(Activity.request_key == key).one()
-        )
+        activity = self.get_query().filter(Activity.request_key == key).one()
         if set_latency:
             kwargs["latency"] = (datetime.datetime.now() - activity.created_at).seconds
 
@@ -126,5 +124,3 @@ class ActivityQuery(BaseQuery):
             return False
 
         return True
-
-
