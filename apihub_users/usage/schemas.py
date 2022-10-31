@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from typing import Optional
 from pydantic import BaseModel
@@ -34,19 +34,6 @@ class ActivityCreate(ActivityBase):
     ip_address: Optional[str] = None
     latency: Optional[float] = None
 
-    def make_activity(self):
-        return ActivityCreate(
-            request=self.request,
-            username=self.username,
-            subscription_type=self.subscription_type,
-            status=self.status,
-            request_key=self.request_key,
-            result=self.result,
-            payload=self.payload,
-            ip_address=self.ip_address,
-            latency=self.latency,
-        )
-
 
 class ActivityDetails(ActivityCreate):
-    created_at: str
+    created_at: datetime
