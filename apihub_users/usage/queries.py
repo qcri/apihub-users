@@ -13,6 +13,10 @@ class UsageException(Exception):
     pass
 
 
+class ActivityException(Exception):
+    pass
+
+
 class UsageQuery(BaseQuery):
     def create_usage(self, usage_create: UsageCreate) -> None:
         new_usage = DailyUsage(
@@ -68,18 +72,13 @@ class UsageQuery(BaseQuery):
         return data
 
 
-class ActivityException(Exception):
-    pass
-
-
 class ActivityQuery(BaseQuery):
     def get_query(self) -> Query:
         return self.session.query(Activity)
 
-    def create_activity_helper(self, activity_log: ActivityCreate) -> bool:
-        """ """
-        db_al = Activity(**activity_log.dict())
-        self.session.add(db_al)
+    def create_activity_helper(self, activity_create: ActivityCreate) -> bool:
+        activity = Activity(**activity_create.dict())
+        self.session.add(activity)
         try:
             self.session.commit()
         except IntegrityError:
@@ -88,30 +87,40 @@ class ActivityQuery(BaseQuery):
 
         return True
 
-    def get_activity_by_key(self, key: str) -> ActivityDetails:
-        activity = self.get_query().filter(Activity.request_key == key).one()
-        return ActivityDetails(
-            created_at=activity.created_at,
-            request=activity.request,
-            subscription_type=activity.subscription_type,
-            status=activity.status,
-            request_key=activity.request_key,
-            result=activity.result,
-            payload=activity.payload,
-            ip_address=activity.ip_address,
-            latency=activity.latency,
-        )
+    def get_activity_by_key(self, request_key: str) -> ActivityDetails:
+        try:
+            activity = (
+                self.get_query().filter(Activity.request_key == request_key).one()
+            )
+            return ActivityDetails(
+                created_at=activity.created_at,
+                request=activity.request,
+                subscription_type=activity.subscription_type,
+                status=activity.status,
+                request_key=activity.request_key,
+                result=activity.result,
+                payload=activity.payload,
+                ip_address=activity.ip_address,
+                latency=activity.latency,
+            )
+        except NoResultFound:
+            raise ActivityException
 
     def get_activities_count(self, **kwargs) -> int:
-
         return self.get_query().filter_by(**kwargs).count()
 
-    def update_activity(self, key, set_latency=True, **kwargs) -> bool:
-        activity = self.get_query().filter(Activity.request_key == key).one()
-        if set_latency:
-            kwargs["latency"] = (datetime.datetime.now() - activity.created_at).seconds
+    def update_activity(self, request_key, set_latency=True, **kwargs) -> bool:
+        try:
+            activity = (
+                self.get_query().filter(Activity.request_key == request_key).one()
+            )
+            if set_latency:
+                kwargs["latency"] = (
+                    datetime.datetime.now() - activity.created_at
+                ).total_seconds()
+        except NoResultFound:
+            raise ActivityException
 
-        activity = activity.dict(exclude_unset=True)
         for key, value in kwargs.items():
             setattr(activity, key, value)
 
