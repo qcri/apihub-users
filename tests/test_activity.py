@@ -1,5 +1,5 @@
 import pytest
-import datetime
+from datetime import datetime
 import factory
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -20,7 +20,7 @@ class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):
     created_at = factory.LazyFunction(datetime.now)
     request = "/async/app1"
     username = factory.Sequence(lambda n: f"tester{n}")
-    subscription_type = SubscriptionType.TRIAL
+    tier = SubscriptionType.TRIAL
     status = "processed"
     request_key = "123"
     result = ""
@@ -59,16 +59,16 @@ def client(db_session):
 
 
 class TestStatistics:
-    def test_create_activity_helper(self, db_session):
+    def test_create_activity(self, db_session):
         ActivityFactory._meta.sqlalchemy_session = db_session
         ActivityFactory._meta.sqlalchemy_session_persistence = "commit"
 
         assert (
-            ActivityQuery(db_session).create_activity_helper(
+            ActivityQuery(db_session).create_activity(
                 ActivityCreate(
                     request="async/test",
                     username="ahmed",
-                    subscription_type="trial",
+                    tier="trial",
                     status="accepted",
                     request_key="test_key",
                     result="",
@@ -77,7 +77,7 @@ class TestStatistics:
                     latency=0.0,
                 )
             )
-            is True
+            is None
         )
 
     def test_get_activity_by_key(self, client, db_session):
@@ -87,28 +87,22 @@ class TestStatistics:
         with pytest.raises(ActivityException):
             query.get_activity_by_key("key 2")
 
-    def test_get_activities_count(self, client, db_session):
-        query = ActivityQuery(db_session)
-        count = query.get_activities_count(**{"status": "accepted"})
-        assert count == 1
-
-        count = query.get_activities_count(**{"status": "processed"})
-        assert count == 1
-
-        count = query.get_activities_count()
-        assert count == 2
-
     def test_update_activity(self, client, db_session):
         query = ActivityQuery(db_session)
         assert (
             query.update_activity(
-                "app1_key", **{"subscription_type": "standard", "ip_address": "test ip"}
+                "app1_key", **{"tier": "standard", "ip_address": "test ip"}
             )
-            is True
+            is None
         )
         activity = query.get_activity_by_key("app1_key")
         assert (
-            activity.subscription_type == "standard"
+            activity.tier == "standard"
             and activity.ip_address == "test ip"
             and activity.latency > 0.0
         )
+
+        with pytest.raises(ActivityException):
+            query.update_activity(
+                "not existing", **{"tier": "standard", "ip_address": "test ip"}
+            )
