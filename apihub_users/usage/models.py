@@ -25,7 +25,7 @@ class Activity(Base):
     created_at = Column(DateTime, default=datetime.now())
     request = Column(String)
     username = Column(String)
-    subscription_type = Column(String)
+    tier = Column(String)
     status = Column(String)
     request_key = Column(String)
     result = Column(String)

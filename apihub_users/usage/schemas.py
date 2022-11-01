@@ -26,7 +26,7 @@ class ActivityBase(BaseModel):
 class ActivityCreate(ActivityBase):
     request: Optional[str] = None
     username: Optional[str] = None
-    subscription_type: Optional[str] = None
+    tier: Optional[str] = None
     status: Optional[str] = None
     request_key: Optional[str] = None
     result: Optional[str] = None

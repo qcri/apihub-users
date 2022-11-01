@@ -68,7 +68,7 @@ class SubscriptionQuery(BaseQuery):
         return SubscriptionDetails(
             username=username,
             application=application,
-            subscription_type=subscription.subscription_type,
+            tier=subscription.tier,
             credit=subscription.credit,
             balance=subscription.balance,
             starts_at=subscription.starts_at,
@@ -96,7 +96,7 @@ class SubscriptionQuery(BaseQuery):
                 SubscriptionDetails(
                     username=subscription.username,
                     application=subscription.application,
-                    subscription_type=subscription.subscription_type,
+                    tier=subscription.tier,
                     credit=subscription.credit,
                     balance=subscription.balance,
                     expires_at=subscription.expires_at,
@@ -107,7 +107,7 @@ class SubscriptionQuery(BaseQuery):
 
     def update_balance_in_subscription(
         self, username: str, application: str, redis: Redis
-    ) -> SubscriptionDetails:
+    ) -> None:
         try:
             subscription = (
                 self.get_query()
@@ -128,15 +128,3 @@ class SubscriptionQuery(BaseQuery):
             subscription.balance = subscription.credit - balance
             self.session.add(subscription)
             self.session.commit()
-
-        return SubscriptionDetails(
-            username=subscription.username,
-            application=subscription.application,
-            subscription_type=subscription.subscription_type,
-            credit=subscription.credit,
-            balance=subscription.balance,
-            expires_at=subscription.expires_at,
-            recurring=subscription.recurring,
-            created_by=subscription.created_by,
-            created_at=subscription.created_at,
-        )

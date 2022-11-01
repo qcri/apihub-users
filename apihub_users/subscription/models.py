@@ -12,7 +12,7 @@ class Subscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     application = Column(String, unique=True, index=True, nullable=False)
-    subscription_type = Column(Enum(SubscriptionType), default=SubscriptionType.TRIAL)
+    tier = Column(Enum(SubscriptionType), default=SubscriptionType.TRIAL)
     credit = Column(Integer, default=0)
     balance = Column(Integer, default=0)
     starts_at = Column(DateTime, default=datetime.now())
@@ -25,4 +25,4 @@ class Subscription(Base):
     user = relationship("User", back_populates="subscriptions")
 
     def __str__(self):
-        return f"{self.application} || {self.subscription_type} || {self.username}"
+        return f"{self.application} || {self.tier} || {self.username}"

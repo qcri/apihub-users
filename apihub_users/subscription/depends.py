@@ -44,7 +44,7 @@ def update_subscription_balance(
             redis.sadd(BALANCE_KEYS, key)
 
     if balance <= 0:
-        subscription = SubscriptionQuery(session).update_balance_in_subscription(
+        SubscriptionQuery(session).update_balance_in_subscription(
             username, application, redis
         )
 

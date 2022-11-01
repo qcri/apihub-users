@@ -76,16 +76,14 @@ class ActivityQuery(BaseQuery):
     def get_query(self) -> Query:
         return self.session.query(Activity)
 
-    def create_activity_helper(self, activity_create: ActivityCreate) -> bool:
+    def create_activity(self, activity_create: ActivityCreate) -> None:
         activity = Activity(**activity_create.dict())
         self.session.add(activity)
         try:
             self.session.commit()
         except IntegrityError:
             self.session.rollback()
-            return False
-
-        return True
+            raise ActivityException("IntegrityError")
 
     def get_activity_by_key(self, request_key: str) -> ActivityDetails:
         try:
@@ -95,7 +93,7 @@ class ActivityQuery(BaseQuery):
             return ActivityDetails(
                 created_at=activity.created_at,
                 request=activity.request,
-                subscription_type=activity.subscription_type,
+                tier=activity.tier,
                 status=activity.status,
                 request_key=activity.request_key,
                 result=activity.result,
@@ -106,10 +104,7 @@ class ActivityQuery(BaseQuery):
         except NoResultFound:
             raise ActivityException
 
-    def get_activities_count(self, **kwargs) -> int:
-        return self.get_query().filter_by(**kwargs).count()
-
-    def update_activity(self, request_key, set_latency=True, **kwargs) -> bool:
+    def update_activity(self, request_key, set_latency=True, **kwargs) -> None:
         try:
             activity = (
                 self.get_query().filter(Activity.request_key == request_key).one()
@@ -130,6 +125,4 @@ class ActivityQuery(BaseQuery):
             self.session.refresh(activity)
         except IntegrityError:
             self.session.rollback()
-            return False
-
-        return True
+            raise ActivityException("IntegrityError")
