@@ -11,6 +11,8 @@ from apihub_users.usage.models import Activity
 from apihub_users.usage.queries import ActivityQuery, ActivityException
 from apihub_users.usage.schemas import ActivityCreate
 
+from apihub.utils import ActivityStatus
+
 
 class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -21,7 +23,7 @@ class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):
     request = "/async/app1"
     username = factory.Sequence(lambda n: f"tester{n}")
     tier = SubscriptionType.TRIAL
-    status = "processed"
+    status = ActivityStatus.PROCESSED
     request_key = "123"
     result = ""
     payload = ""
@@ -46,13 +48,13 @@ def client(db_session):
         username="tester",
         request="async/app1",
         request_key="app1_key",
-        status="processed",
+        status=ActivityStatus.PROCESSED,
     )
     ActivityFactory(
         username="tester",
         request="async/app2",
         request_key="app2_key",
-        status="accepted",
+        status=ActivityStatus.ACCEPTED,
     )
 
     yield TestClient(app)
@@ -69,7 +71,7 @@ class TestStatistics:
                     request="async/test",
                     username="ahmed",
                     tier="trial",
-                    status="accepted",
+                    status=ActivityStatus.ACCEPTED,
                     request_key="test_key",
                     result="",
                     payload="",
