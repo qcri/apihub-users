@@ -1,3 +1,4 @@
+from apihub_users.subscription.schemas import SubscriptionBase
 from fastapi import HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT
 from redis import Redis
@@ -12,26 +13,35 @@ HTTP_403_FORBIDDEN = 403
 HTTP_429_QUOTA = 429
 
 
-def require_subscription(application: str, Authorize: AuthJWT = Depends()) -> str:
+def require_subscription(
+    application: str, Authorize: AuthJWT = Depends()
+) -> SubscriptionBase:
     Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
 
     claims = Authorize.get_raw_jwt()
     subscription_claim = claims.get("subscription")
+    tier_claim = claims.get("tier")
     if subscription_claim != application:
         raise HTTPException(
             HTTP_403_FORBIDDEN,
             "The API key doesn't have permission to perform the request",
         )
-    return Authorize.get_jwt_subject()
+    return SubscriptionBase(
+        username=username, tier=tier_claim, application=subscription_claim
+    )
 
 
-def update_subscription_balance(
-    application: str,
-    username: str = Depends(require_subscription),
+def require_subscription_balance(
+    subscription_base: SubscriptionBase = Depends(require_subscription),
     redis: Redis = Depends(redis_conn),
     session=Depends(create_session),
 ) -> str:
-    key = make_key(username, application)
+    username = subscription_base.username
+    tier = subscription_base.tier
+    application = subscription_base.application
+
+    key = make_key(username, application, tier)
     balance = redis.decr(key)
 
     if balance == -1:
@@ -45,33 +55,7 @@ def update_subscription_balance(
 
     if balance <= 0:
         SubscriptionQuery(session).update_balance_in_subscription(
-            username, application, redis
-        )
-
-    return username
-
-
-def require_subscription_balance(
-    application: str,
-    username: str = Depends(require_subscription),
-    redis: Redis = Depends(redis_conn),
-    session=Depends(create_session),
-) -> str:
-    key = make_key(username, application)
-    balance = redis.decr(key)
-
-    if balance == -1:
-        subscription = SubscriptionQuery(session).get_active_subscription(
-            username, application
-        )
-        balance = subscription.credit - subscription.balance - 1
-        if balance > 0:
-            redis.set(key, balance)
-            redis.sadd(BALANCE_KEYS, key)
-
-    if balance <= 0:
-        subscription = SubscriptionQuery(session).update_balance_in_subscription(
-            username, application, redis
+            username, application, tier, redis
         )
 
     if balance < 0:

@@ -172,7 +172,7 @@ async def get_application_token(
     expires_time = timedelta(days=expires_days)
     access_token = Authorize.create_access_token(
         subject=username,
-        user_claims={"subscription": application},
+        user_claims={"subscription": application, "tier": subscription.tier},
         expires_time=expires_time,
     )
     return SubscriptionTokenResponse(

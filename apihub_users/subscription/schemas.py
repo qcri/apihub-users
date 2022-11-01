@@ -12,13 +12,12 @@ class SubscriptionType(str, Enum):
 
 
 class SubscriptionBase(BaseModel):
-    pass
-
-
-class SubscriptionCreate(SubscriptionBase):
     username: str
     application: str
     tier: str
+
+
+class SubscriptionCreate(SubscriptionBase):
     credit: int
     starts_at: datetime = datetime.now()
     expires_at: Optional[datetime] = None
