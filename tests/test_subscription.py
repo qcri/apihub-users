@@ -25,7 +25,7 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
-    subscription_type = SubscriptionType.TRIAL
+    tier = SubscriptionType.TRIAL
     credit = 100
     balance = 0
     starts_at = factory.LazyFunction(datetime.now)
@@ -95,7 +95,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            subscription_type=SubscriptionType.TRIAL,
+            tier=SubscriptionType.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -122,7 +122,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="not existing user",
             application="app 1",
-            subscription_type=SubscriptionType.TRIAL,
+            tier=SubscriptionType.TRIAL,
             credit=100,
             expires_at=None,
             recurring=False,
@@ -167,7 +167,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            subscription_type=SubscriptionType.TRIAL,
+            tier=SubscriptionType.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -191,7 +191,7 @@ class TestSubscription:
         SubscriptionFactory(
             username="tester",
             application="test",
-            subscription_type=SubscriptionType.TRIAL,
+            tier=SubscriptionType.TRIAL,
             credit=1,
         )
 
@@ -211,7 +211,7 @@ class TestSubscription:
         SubscriptionFactory(
             username="tester",
             application="test",
-            subscription_type=SubscriptionType.TRIAL,
+            tier=SubscriptionType.TRIAL,
             credit=2,
         )
 
