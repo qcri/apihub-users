@@ -27,7 +27,7 @@ class SubscriptionSettings(BaseSettings):
 class SubscriptionIn(BaseModel):
     username: str
     application: str
-    subscription_type: str
+    tier: str
     credit: int
     expires_at: Optional[datetime] = None
     recurring: bool = False
@@ -65,7 +65,7 @@ def create_subscription(
     subscription_create = SubscriptionCreate(
         username=subscription.username,
         application=subscription.application,
-        subscription_type=subscription.subscription_type,
+        tier=subscription.tier,
         credit=subscription.credit,
         starts_at=datetime.now(),
         expires_at=subscription.expires_at,

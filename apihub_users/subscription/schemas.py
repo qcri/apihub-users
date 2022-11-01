@@ -18,7 +18,7 @@ class SubscriptionBase(BaseModel):
 class SubscriptionCreate(SubscriptionBase):
     username: str
     application: str
-    subscription_type: str
+    tier: str
     credit: int
     starts_at: datetime = datetime.now()
     expires_at: Optional[datetime] = None

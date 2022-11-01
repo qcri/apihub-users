@@ -31,13 +31,12 @@ def copy_yesterday_usage(redis, session):
             redis.hdel(USAGE_KEY, k)
 
 
-def create_activity(session=Depends(create_session), **kwargs):
-    activity = ActivityQuery(session)
-    return activity.create_activity_helper(
+def create_activity_helper(session=Depends(create_session), **kwargs):
+    ActivityQuery(session).create_activity(
         ActivityCreate(
             request=kwargs.get("request"),
             username=kwargs.get("username"),
-            subscription_type=kwargs.get("subscription_type"),
+            tier=kwargs.get("tier"),
             status=kwargs.get("status"),
             request_key=kwargs.get("request_key"),
             result=kwargs.get("result"),
