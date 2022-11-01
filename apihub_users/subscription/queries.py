@@ -106,7 +106,7 @@ class SubscriptionQuery(BaseQuery):
         return data
 
     def update_balance_in_subscription(
-        self, username: str, application: str, redis: Redis
+        self, username: str, application: str, tier: str, redis: Redis
     ) -> None:
         try:
             subscription = (
@@ -114,6 +114,7 @@ class SubscriptionQuery(BaseQuery):
                 .filter(
                     Subscription.username == username,
                     Subscription.application == application,
+                    Subscription.tier == tier,
                     or_(
                         Subscription.expires_at.is_(None),
                         Subscription.expires_at > datetime.now(),
@@ -124,7 +125,9 @@ class SubscriptionQuery(BaseQuery):
         except NoResultFound:
             raise SubscriptionException
 
-        with get_and_reset_balance_in_cache(username, application, redis) as balance:
+        with get_and_reset_balance_in_cache(
+            username, application, tier, redis
+        ) as balance:
             subscription.balance = subscription.credit - balance
             self.session.add(subscription)
             self.session.commit()

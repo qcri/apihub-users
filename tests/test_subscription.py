@@ -9,8 +9,6 @@ from apihub_users.common.db_session import create_session
 from apihub_users.security.schemas import UserBase, UserType
 from apihub_users.security.depends import require_user, require_admin, require_token
 from apihub_users.subscription.depends import (
-    require_subscription,
-    update_subscription_balance,
     require_subscription_balance,
 )
 from apihub_users.subscription.models import Subscription, SubscriptionType
@@ -63,10 +61,6 @@ def client(db_session):
     app.dependency_overrides[require_admin] = _require_admin
     app.dependency_overrides[require_user] = _require_user
     app.dependency_overrides[require_token] = _require_user_token
-
-    @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
-    def api_function_1(application: str, username: str = Depends(require_subscription)):
-        pass
 
     @app.get("/api_balance/{application}")
     def api_function_2(
@@ -183,26 +177,6 @@ class TestSubscription:
             data=new_subscription.json(),
         )
         assert response.status_code == 403, response.json()
-
-    def test_update_balance(self, client, db_session):
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
-
-        SubscriptionFactory(
-            username="tester",
-            application="test",
-            tier=SubscriptionType.TRIAL,
-            credit=1,
-        )
-
-        response = client.get(
-            "/token/test",
-        )
-        assert response.status_code == 200, response.json()
-        token = response.json().get("token")
-
-        response = client.get("/api/test", headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 200, response.json()
 
     def test_require_balance(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session

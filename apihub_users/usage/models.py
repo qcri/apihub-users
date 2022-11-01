@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Date, DateTime, Float
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
 
+from apihub.utils import ActivityStatus
 from ..common.db_session import Base
 
 
@@ -26,7 +27,7 @@ class Activity(Base):
     request = Column(String)
     username = Column(String)
     tier = Column(String)
-    status = Column(String)
+    status = Column(Enum(ActivityStatus), default=ActivityStatus.ACCEPTED)
     request_key = Column(String)
     result = Column(String)
     payload = Column(String)
