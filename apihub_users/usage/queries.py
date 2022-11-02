@@ -1,13 +1,19 @@
+import datetime
 from typing import List
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import Query
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from ..common.queries import BaseQuery
-from .models import DailyUsage
-from .schemas import UsageCreate, UsageDetails
+from .models import DailyUsage, Activity
+from .schemas import UsageDetails, UsageCreate, ActivityCreate, ActivityDetails
 
 
 class UsageException(Exception):
+    pass
+
+
+class ActivityException(Exception):
     pass
 
 
@@ -64,3 +70,59 @@ class UsageQuery(BaseQuery):
                 )
             )
         return data
+
+
+class ActivityQuery(BaseQuery):
+    def get_query(self) -> Query:
+        return self.session.query(Activity)
+
+    def create_activity(self, activity_create: ActivityCreate) -> None:
+        activity = Activity(**activity_create.dict())
+        self.session.add(activity)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise ActivityException("IntegrityError")
+
+    def get_activity_by_key(self, request_key: str) -> ActivityDetails:
+        try:
+            activity = (
+                self.get_query().filter(Activity.request_key == request_key).one()
+            )
+            return ActivityDetails(
+                created_at=activity.created_at,
+                request=activity.request,
+                tier=activity.tier,
+                status=activity.status,
+                request_key=activity.request_key,
+                result=activity.result,
+                payload=activity.payload,
+                ip_address=activity.ip_address,
+                latency=activity.latency,
+            )
+        except NoResultFound:
+            raise ActivityException
+
+    def update_activity(self, request_key, set_latency=True, **kwargs) -> None:
+        try:
+            activity = (
+                self.get_query().filter(Activity.request_key == request_key).one()
+            )
+            if set_latency:
+                kwargs["latency"] = (
+                    datetime.datetime.now() - activity.created_at
+                ).total_seconds()
+        except NoResultFound:
+            raise ActivityException
+
+        for key, value in kwargs.items():
+            setattr(activity, key, value)
+
+        self.session.add(activity)
+        try:
+            self.session.commit()
+            self.session.refresh(activity)
+        except IntegrityError:
+            self.session.rollback()
+            raise ActivityException("IntegrityError")
