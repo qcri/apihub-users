@@ -65,14 +65,15 @@ class TestStatistics:
         ActivityFactory._meta.sqlalchemy_session = db_session
         ActivityFactory._meta.sqlalchemy_session_persistence = "commit"
 
+        query = ActivityQuery(db_session)
         assert (
-            ActivityQuery(db_session).create_activity(
+            query.create_activity(
                 ActivityCreate(
                     request="async/test",
                     username="ahmed",
                     tier="trial",
                     status=ActivityStatus.ACCEPTED,
-                    request_key="test_key",
+                    request_key="async/test_key",
                     result="",
                     payload="",
                     ip_address="",
@@ -81,6 +82,7 @@ class TestStatistics:
             )
             is None
         )
+        assert query.get_activity_by_key("async/test_key") is not None
 
     def test_get_activity_by_key(self, client, db_session):
         query = ActivityQuery(db_session)
