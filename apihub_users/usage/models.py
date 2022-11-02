@@ -1,8 +1,8 @@
 from datetime import datetime
 
+from .schemas import ActivityStatus
 from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
 
-from apihub.utils import ActivityStatus
 from ..common.db_session import Base
 
 

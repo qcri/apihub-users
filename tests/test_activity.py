@@ -9,9 +9,7 @@ from apihub_users.subscription.router import router
 from apihub_users.subscription.models import SubscriptionType
 from apihub_users.usage.models import Activity
 from apihub_users.usage.queries import ActivityQuery, ActivityException
-from apihub_users.usage.schemas import ActivityCreate
-
-from apihub.utils import ActivityStatus
+from apihub_users.usage.schemas import ActivityCreate, ActivityStatus
 
 
 class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):
