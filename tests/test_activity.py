@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from apihub_users.common.db_session import create_session
 from apihub_users.subscription.router import router
-from apihub_users.subscription.models import SubscriptionTier
+from apihub_users.subscription.models import SubscriptionType
 from apihub_users.usage.models import Activity
 from apihub_users.usage.queries import ActivityQuery, ActivityException
 from apihub_users.usage.schemas import ActivityCreate, ActivityStatus
@@ -20,7 +20,7 @@ class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):
     created_at = factory.LazyFunction(datetime.now)
     request = "/async/app1"
     username = factory.Sequence(lambda n: f"tester{n}")
-    tier = SubscriptionTier.TRIAL
+    tier = SubscriptionType.TRIAL
     status = ActivityStatus.PROCESSED
     request_key = "123"
     result = ""
@@ -69,7 +69,7 @@ class TestStatistics:
                 ActivityCreate(
                     request="async/test",
                     username="ahmed",
-                    tier=SubscriptionTier.TRIAL,
+                    tier="trial",
                     status=ActivityStatus.ACCEPTED,
                     request_key="async/test_key",
                     result="",
@@ -80,13 +80,11 @@ class TestStatistics:
             )
             is None
         )
-        assert (
-            query.get_activity_by_key("async/test_key").request_key == "async/test_key"
-        )
+        assert query.get_activity_by_key("async/test_key") is not None
 
     def test_get_activity_by_key(self, client, db_session):
         query = ActivityQuery(db_session)
-        assert query.get_activity_by_key("app1_key").request_key == "app1_key"
+        assert query.get_activity_by_key("app1_key") is not None
 
         with pytest.raises(ActivityException):
             query.get_activity_by_key("key 2")
@@ -95,20 +93,18 @@ class TestStatistics:
         query = ActivityQuery(db_session)
         assert (
             query.update_activity(
-                "app1_key",
-                **{"tier": SubscriptionTier.STANDARD, "ip_address": "test ip"},
+                "app1_key", **{"tier": "standard", "ip_address": "test ip"}
             )
             is None
         )
         activity = query.get_activity_by_key("app1_key")
         assert (
-            activity.tier == SubscriptionTier.STANDARD
+            activity.tier == "standard"
             and activity.ip_address == "test ip"
             and activity.latency > 0.0
         )
 
         with pytest.raises(ActivityException):
             query.update_activity(
-                "not existing",
-                **{"tier": SubscriptionTier.STANDARD, "ip_address": "test ip"},
+                "not existing", **{"tier": "standard", "ip_address": "test ip"}
             )

@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, E
 from sqlalchemy.orm import relationship
 
 from ..common.db_session import Base
-from .schemas import SubscriptionTier
+from .schemas import SubscriptionType
 
 
 class Subscription(Base):
@@ -12,7 +12,7 @@ class Subscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     application = Column(String, unique=True, index=True, nullable=False)
-    tier = Column(Enum(SubscriptionTier), default=SubscriptionTier.TRIAL)
+    tier = Column(Enum(SubscriptionType), default=SubscriptionType.TRIAL)
     credit = Column(Integer, default=0)
     balance = Column(Integer, default=0)
     starts_at = Column(DateTime, default=datetime.now())
