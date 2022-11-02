@@ -24,8 +24,11 @@ def get_db_engine():
     )
 
 
+DB_ENGINE = get_db_engine()
+
+
 def create_session() -> Iterator[Session]:
-    session = sessionmaker(bind=get_db_engine())()
+    session = sessionmaker(bind=DB_ENGINE)()
 
     try:
         yield session
