@@ -33,13 +33,13 @@ def require_subscription(
 
 
 def require_subscription_balance(
-    subscription_base: SubscriptionBase = Depends(require_subscription),
+    subscription: SubscriptionBase = Depends(require_subscription),
     redis: Redis = Depends(redis_conn),
     session=Depends(create_session),
 ) -> str:
-    username = subscription_base.username
-    tier = subscription_base.tier
-    application = subscription_base.application
+    username = subscription.username
+    tier = subscription.tier
+    application = subscription.application
 
     key = make_key(username, application, tier)
     balance = redis.decr(key)
