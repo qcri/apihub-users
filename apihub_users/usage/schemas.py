@@ -2,6 +2,7 @@ from datetime import date, datetime
 
 from typing import Optional
 from pydantic import BaseModel
+from enum import Enum
 
 
 class UsageBase(BaseModel):
@@ -37,3 +38,8 @@ class ActivityCreate(ActivityBase):
 
 class ActivityDetails(ActivityCreate):
     created_at: datetime
+
+
+class ActivityStatus(str, Enum):
+    ACCEPTED = "ACCEPTED"
+    PROCESSED = "PROCESSED"
