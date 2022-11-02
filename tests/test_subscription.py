@@ -11,7 +11,7 @@ from apihub_users.security.depends import require_user, require_admin, require_t
 from apihub_users.subscription.depends import (
     require_subscription_balance,
 )
-from apihub_users.subscription.models import Subscription, SubscriptionType
+from apihub_users.subscription.models import Subscription, SubscriptionTier
 from apihub_users.subscription.router import router, SubscriptionIn
 from .test_security import UserFactory
 
@@ -23,7 +23,7 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
-    tier = SubscriptionType.TRIAL
+    tier = SubscriptionTier.TRIAL
     credit = 100
     balance = 0
     starts_at = factory.LazyFunction(datetime.now)
@@ -89,7 +89,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            tier=SubscriptionType.TRIAL,
+            tier=SubscriptionTier.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -116,7 +116,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="not existing user",
             application="app 1",
-            tier=SubscriptionType.TRIAL,
+            tier=SubscriptionTier.TRIAL,
             credit=100,
             expires_at=None,
             recurring=False,
@@ -161,7 +161,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
-            tier=SubscriptionType.TRIAL,
+            tier=SubscriptionTier.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -185,7 +185,7 @@ class TestSubscription:
         SubscriptionFactory(
             username="tester",
             application="test",
-            tier=SubscriptionType.TRIAL,
+            tier=SubscriptionTier.TRIAL,
             credit=2,
         )
 
