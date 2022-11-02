@@ -9,13 +9,10 @@ from apihub_users.common.db_session import create_session
 from apihub_users.security.schemas import UserBase, UserType
 from apihub_users.security.depends import require_user, require_admin, require_token
 from apihub_users.subscription.depends import (
-    require_subscription,
-    update_subscription_balance,
     require_subscription_balance,
 )
-from apihub_users.subscription.models import Subscription
+from apihub_users.subscription.models import Subscription, SubscriptionTier
 from apihub_users.subscription.router import router, SubscriptionIn
-
 from .test_security import UserFactory
 
 
@@ -26,6 +23,7 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
+    tier = SubscriptionTier.TRIAL
     credit = 100
     balance = 0
     starts_at = factory.LazyFunction(datetime.now)
@@ -64,10 +62,6 @@ def client(db_session):
     app.dependency_overrides[require_user] = _require_user
     app.dependency_overrides[require_token] = _require_user_token
 
-    @app.get("/api/{application}", dependencies=[Depends(update_subscription_balance)])
-    def api_function_1(application: str, username: str = Depends(require_subscription)):
-        pass
-
     @app.get("/api_balance/{application}")
     def api_function_2(
         application: str, username: str = Depends(require_subscription_balance)
@@ -95,6 +89,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
+            tier=SubscriptionTier.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -111,10 +106,17 @@ class TestSubscription:
         assert response.status_code == 200
         assert response.json().get("credit") == 123
 
+    def test_get_all_subscriptions(self, client):
+        response = client.get(
+            "/subscription",
+        )
+        assert response.status_code == 200
+
     def test_create_subscription_not_existing_user(self, client):
         new_subscription = SubscriptionIn(
             username="not existing user",
             application="app 1",
+            tier=SubscriptionTier.TRIAL,
             credit=100,
             expires_at=None,
             recurring=False,
@@ -159,6 +161,7 @@ class TestSubscription:
         new_subscription = SubscriptionIn(
             username="tester",
             application="application",
+            tier=SubscriptionTier.TRIAL,
             credit=123,
             expires_at=None,
             recurring=False,
@@ -175,26 +178,16 @@ class TestSubscription:
         )
         assert response.status_code == 403, response.json()
 
-    def test_update_balance(self, client, db_session):
-        SubscriptionFactory._meta.sqlalchemy_session = db_session
-        SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
-
-        SubscriptionFactory(username="tester", application="test", credit=1)
-
-        response = client.get(
-            "/token/test",
-        )
-        assert response.status_code == 200, response.json()
-        token = response.json().get("token")
-
-        response = client.get("/api/test", headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 200, response.json()
-
     def test_require_balance(self, client, db_session):
         SubscriptionFactory._meta.sqlalchemy_session = db_session
         SubscriptionFactory._meta.sqlalchemy_session_persistence = "commit"
 
-        SubscriptionFactory(username="tester", application="test", credit=2)
+        SubscriptionFactory(
+            username="tester",
+            application="test",
+            tier=SubscriptionTier.TRIAL,
+            credit=2,
+        )
 
         response = client.get(
             "/token/test",
