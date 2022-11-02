@@ -5,10 +5,10 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class SubscriptionType(str, Enum):
-    TRIAL = "trial"
-    STANDARD = "standard"
-    PREMIUM = "premium"
+class SubscriptionTier(str, Enum):
+    TRIAL = "TRIAL"
+    STANDARD = "STANDARD"
+    PREMIUM = "PREMIUM"
 
 
 class SubscriptionBase(BaseModel):
