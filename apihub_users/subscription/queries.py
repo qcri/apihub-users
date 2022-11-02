@@ -68,6 +68,7 @@ class SubscriptionQuery(BaseQuery):
         return SubscriptionDetails(
             username=username,
             application=application,
+            tier=subscription.tier,
             credit=subscription.credit,
             balance=subscription.balance,
             starts_at=subscription.starts_at,
@@ -95,6 +96,7 @@ class SubscriptionQuery(BaseQuery):
                 SubscriptionDetails(
                     username=subscription.username,
                     application=subscription.application,
+                    tier=subscription.tier,
                     credit=subscription.credit,
                     balance=subscription.balance,
                     expires_at=subscription.expires_at,
@@ -104,14 +106,15 @@ class SubscriptionQuery(BaseQuery):
         return data
 
     def update_balance_in_subscription(
-        self, username: str, application: str, redis: Redis
-    ) -> SubscriptionDetails:
+        self, username: str, application: str, tier: str, redis: Redis
+    ) -> None:
         try:
             subscription = (
                 self.get_query()
                 .filter(
                     Subscription.username == username,
                     Subscription.application == application,
+                    Subscription.tier == tier,
                     or_(
                         Subscription.expires_at.is_(None),
                         Subscription.expires_at > datetime.now(),
@@ -122,18 +125,9 @@ class SubscriptionQuery(BaseQuery):
         except NoResultFound:
             raise SubscriptionException
 
-        with get_and_reset_balance_in_cache(username, application, redis) as balance:
+        with get_and_reset_balance_in_cache(
+            username, application, tier, redis
+        ) as balance:
             subscription.balance = subscription.credit - balance
             self.session.add(subscription)
             self.session.commit()
-
-        return SubscriptionDetails(
-            username=subscription.username,
-            application=subscription.application,
-            credit=subscription.credit,
-            balance=subscription.balance,
-            expires_at=subscription.expires_at,
-            recurring=subscription.recurring,
-            created_by=subscription.created_by,
-            created_at=subscription.created_at,
-        )
