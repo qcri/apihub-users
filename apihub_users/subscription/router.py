@@ -27,6 +27,7 @@ class SubscriptionSettings(BaseSettings):
 class SubscriptionIn(BaseModel):
     username: str
     application: str
+    tier: str
     credit: int
     expires_at: Optional[datetime] = None
     recurring: bool = False
@@ -38,6 +39,7 @@ def create_subscription(
     username: str = Depends(require_admin),
     session=Depends(create_session),
 ):
+
     # make sure the username exists.
     try:
         UserQuery(session).get_user_by_username(subscription.username)
@@ -63,6 +65,7 @@ def create_subscription(
     subscription_create = SubscriptionCreate(
         username=subscription.username,
         application=subscription.application,
+        tier=subscription.tier,
         credit=subscription.credit,
         starts_at=datetime.now(),
         expires_at=subscription.expires_at,
@@ -83,6 +86,7 @@ def get_active_subscription(
     user: UserBase = Depends(require_token),
     session=Depends(create_session),
 ):
+
     query = SubscriptionQuery(session)
     try:
         subscription = query.get_active_subscription(user.username, application)
@@ -99,6 +103,8 @@ def get_active_subscriptions(
 ):
     if user.is_user:
         username = user.username
+    else:
+        return []
 
     query = SubscriptionQuery(session)
     try:
@@ -166,7 +172,7 @@ async def get_application_token(
     expires_time = timedelta(days=expires_days)
     access_token = Authorize.create_access_token(
         subject=username,
-        user_claims={"subscription": application},
+        user_claims={"subscription": application, "tier": subscription.tier},
         expires_time=expires_time,
     )
     return SubscriptionTokenResponse(

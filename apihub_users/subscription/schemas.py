@@ -5,19 +5,19 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class SubscriptionType(str, Enum):
+class SubscriptionTier(str, Enum):
     TRIAL = "trial"
     STANDARD = "standard"
     PREMIUM = "premium"
 
 
 class SubscriptionBase(BaseModel):
-    pass
+    username: str
+    application: str
+    tier: str
 
 
 class SubscriptionCreate(SubscriptionBase):
-    username: str
-    application: str
     credit: int
     starts_at: datetime = datetime.now()
     expires_at: Optional[datetime] = None
