@@ -7,9 +7,9 @@ from fastapi.testclient import TestClient
 from apihub_users.common.db_session import create_session
 from apihub_users.subscription.router import router
 from apihub_users.subscription.models import SubscriptionTier
-from apihub_users.usage.models import Activity
-from apihub_users.usage.queries import ActivityQuery, ActivityException
-from apihub_users.usage.schemas import ActivityCreate, ActivityStatus
+from apihub_users.activity.models import Activity
+from apihub_users.activity.queries import ActivityQuery, ActivityException
+from apihub_users.activity.schemas import ActivityCreate, ActivityStatus
 
 
 class ActivityFactory(factory.alchemy.SQLAlchemyModelFactory):

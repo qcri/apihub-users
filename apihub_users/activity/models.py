@@ -1,23 +1,10 @@
 from datetime import datetime
 
 from .schemas import ActivityStatus
-from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Float, Enum
 
 from ..common.db_session import Base
 from ..subscription.schemas import SubscriptionTier
-
-
-class DailyUsage(Base):
-    __tablename__ = "daily_usages"
-
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(Date)
-    username = Column(String, index=True)
-    application = Column(String, index=True)
-    usage = Column(Integer, default=0)
-
-    def __str__(self):
-        return f"{self.application} || {self.username} || {self.usage}"
 
 
 class Activity(Base):

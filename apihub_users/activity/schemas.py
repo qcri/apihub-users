@@ -1,22 +1,7 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 from enum import Enum
-
-
-class UsageBase(BaseModel):
-    pass
-
-
-class UsageCreate(UsageBase):
-    date: date
-    username: str
-    application: str
-    usage: int
-
-
-class UsageDetails(UsageCreate):
-    pass
 
 
 class ActivityBase(BaseModel):
