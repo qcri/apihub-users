@@ -4,6 +4,7 @@ from .schemas import ActivityStatus
 from sqlalchemy import Column, Integer, String, Date, DateTime, Float, Enum
 
 from ..common.db_session import Base
+from ..subscription.schemas import SubscriptionTier
 
 
 class DailyUsage(Base):
@@ -20,13 +21,17 @@ class DailyUsage(Base):
 
 
 class Activity(Base):
+    """
+    This class is used to store activity data.
+    """
+
     __tablename__ = "activity"
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.now())
     request = Column(String)
     username = Column(String)
-    tier = Column(String)
+    tier = Column(Enum(SubscriptionTier), default=SubscriptionTier.TRIAL)
     status = Column(Enum(ActivityStatus), default=ActivityStatus.ACCEPTED)
     request_key = Column(String)
     result = Column(String)

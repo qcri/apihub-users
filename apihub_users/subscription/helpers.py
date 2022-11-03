@@ -7,6 +7,13 @@ BALANCE_KEYS = "balance:keys"
 
 
 def make_key(username: str, application: str, tier: str) -> str:
+    """
+    Make key for redis.
+    :param username: str
+    :param application: str
+    :param tier: str
+    :return: str.
+    """
     return f"balance:{username}:{application}:{tier}"
 
 
@@ -15,7 +22,12 @@ def get_and_reset_balance_in_cache(
     username: str, application: str, tier: str, redis: Redis
 ) -> None:
     """
-    Get the balance from the cache and reset it to the credit value
+    Get balance from cache and delete it.
+    :param username: str
+    :param application: str
+    :param tier: str
+    :param redis: Redis object.
+    :return: None
     """
     key = make_key(username, application, tier)
     balance = redis.get(key)

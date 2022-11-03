@@ -4,6 +4,12 @@ from base64 import b64encode, b64decode
 
 
 def hash_password(password, salt=None):
+    """
+    Hash password with salt.
+    :param password: str
+    :param salt: salt algorithm to use.
+    :return:
+    """
     if salt is None:
         salt_ = os.urandom(32)
         salt = b64encode(salt_)

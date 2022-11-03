@@ -74,9 +74,18 @@ class UsageQuery(BaseQuery):
 
 class ActivityQuery(BaseQuery):
     def get_query(self) -> Query:
+        """
+        Get query object
+        :return: Query object.
+        """
         return self.session.query(Activity)
 
     def create_activity(self, activity_create: ActivityCreate) -> None:
+        """
+        Create a new activity.
+        :param activity_create: ActivityCreate object.
+        :return: None
+        """
         activity = Activity(**activity_create.dict())
         self.session.add(activity)
         try:
@@ -86,6 +95,11 @@ class ActivityQuery(BaseQuery):
             raise ActivityException("IntegrityError")
 
     def get_activity_by_key(self, request_key: str) -> ActivityDetails:
+        """
+        Get activity by request key.
+        :param request_key: str
+        :return: ActivityDetails object.
+        """
         try:
             activity = (
                 self.get_query().filter(Activity.request_key == request_key).one()
@@ -105,6 +119,13 @@ class ActivityQuery(BaseQuery):
             raise ActivityException
 
     def update_activity(self, request_key, set_latency=True, **kwargs) -> None:
+        """
+        Update activity by request key.
+        :param request_key: str
+        :param set_latency: bool
+        :param kwargs: dict of fields to update.
+        :return: None
+        """
         try:
             activity = (
                 self.get_query().filter(Activity.request_key == request_key).one()

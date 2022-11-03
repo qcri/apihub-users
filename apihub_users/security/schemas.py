@@ -44,6 +44,10 @@ class UserCreate(UserBase):
     password: str
 
     def make_user(self):
+        """
+        Make a User object from UserCreate object.
+        :return:
+        """
         salt, hashed_password = hash_password(self.password)
         return UserCreateHashed(
             username=self.username,
