@@ -69,7 +69,7 @@ class TestActivity:
                 ActivityCreate(
                     request="async/test",
                     username="ahmed",
-                    tier="trial",
+                    tier=SubscriptionTier.TRIAL,
                     status=ActivityStatus.ACCEPTED,
                     request_key="async/test_key",
                     result="",
@@ -95,18 +95,20 @@ class TestActivity:
         query = ActivityQuery(db_session)
         assert (
             query.update_activity(
-                "app1_key", **{"tier": "standard", "ip_address": "test ip"}
+                "app1_key",
+                **{"tier": SubscriptionTier.STANDARD, "ip_address": "test ip"},
             )
             is None
         )
         activity = query.get_activity_by_key("app1_key")
         assert (
-            activity.tier == "standard"
+            activity.tier == SubscriptionTier.STANDARD
             and activity.ip_address == "test ip"
             and activity.latency > 0.0
         )
 
         with pytest.raises(ActivityException):
             query.update_activity(
-                "not existing", **{"tier": "standard", "ip_address": "test ip"}
+                "not existing",
+                **{"tier": SubscriptionTier.STANDARD, "ip_address": "test ip"},
             )
