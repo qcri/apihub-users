@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, BaseSettings
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
+from starlette.responses import JSONResponse
 
 from ..common.db_session import create_session
 from ..security.schemas import UserBase  # TODO create a model for this UserBase
@@ -91,7 +92,9 @@ def get_active_subscription(
     try:
         subscription = query.get_active_subscription(user.username, application)
     except SubscriptionException:
-        return {}
+        return JSONResponse(
+            status_code=400, content={"detail": "Subscription not found"}
+        )
 
     return subscription
 

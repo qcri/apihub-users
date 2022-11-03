@@ -6,9 +6,9 @@ from pydantic import BaseModel
 
 
 class SubscriptionTier(str, Enum):
-    TRIAL = "trial"
-    STANDARD = "standard"
-    PREMIUM = "premium"
+    TRIAL = "TRIAL"
+    STANDARD = "STANDARD"
+    PREMIUM = "PREMIUM"
 
 
 class SubscriptionBase(BaseModel):
@@ -22,6 +22,7 @@ class SubscriptionCreate(SubscriptionBase):
     starts_at: datetime = datetime.now()
     expires_at: Optional[datetime] = None
     recurring: bool = False
+    active: bool = True
     created_by: str
     notes: Optional[str] = None
 

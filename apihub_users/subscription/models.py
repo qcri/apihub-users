@@ -8,11 +8,16 @@ from .schemas import SubscriptionTier
 
 
 class Subscription(Base):
+    """
+    This class is used to store subscription data.
+    """
+
     __tablename__ = "subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
     application = Column(String, unique=True, index=True, nullable=False)
     tier = Column(Enum(SubscriptionTier), default=SubscriptionTier.TRIAL)
+    active = Column(Boolean, default=True)
     credit = Column(Integer, default=0)
     balance = Column(Integer, default=0)
     starts_at = Column(DateTime, default=datetime.now())
