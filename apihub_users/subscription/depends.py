@@ -16,6 +16,12 @@ HTTP_429_QUOTA = 429
 def require_subscription(
     application: str, Authorize: AuthJWT = Depends()
 ) -> SubscriptionBase:
+    """
+    This function is used to check if the user has a valid subscription token.
+    :param application: str
+    :param Authorize: AuthJWT object.
+    :return: SubscriptionBase object.
+    """
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
 
@@ -37,6 +43,13 @@ def require_subscription_balance(
     redis: Redis = Depends(redis_conn),
     session=Depends(create_session),
 ) -> str:
+    """
+    This function is used to check if the user has enough balance to perform.
+    :param subscription: str
+    :param redis: Redis object.
+    :param session: Session object.
+    :return: username str.
+    """
     username = subscription.username
     tier = subscription.tier
     application = subscription.application

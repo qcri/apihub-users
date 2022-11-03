@@ -15,6 +15,10 @@ from ..common.db_session import Base
 
 
 class User(Base):
+    """
+    This class is used to store user data.
+    """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)

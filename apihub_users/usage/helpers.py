@@ -1,10 +1,7 @@
 from datetime import date, datetime
 
-from fastapi import Depends
-
-from .queries import UsageQuery, ActivityQuery
-from .schemas import UsageCreate, ActivityCreate
-from apihub_users.common.db_session import create_session
+from .queries import UsageQuery
+from .schemas import UsageCreate
 
 USAGE_KEY = "dailyusage"
 
@@ -14,6 +11,12 @@ def make_key(username: str, application: str, date: str) -> str:
 
 
 def copy_yesterday_usage(redis, session):
+    """
+    This function is used to copy yesterday's usage to today.
+    :param redis: Redis object.
+    :param session: Session object.
+    :return: None
+    """
     query = UsageQuery(session)
     today = date.today().isoformat()
     for k, v in redis.hgetall(USAGE_KEY).items():
@@ -29,19 +32,3 @@ def copy_yesterday_usage(redis, session):
             )
             query.create_usage(usage)
             redis.hdel(USAGE_KEY, k)
-
-
-def create_activity_helper(session=Depends(create_session), **kwargs):
-    ActivityQuery(session).create_activity(
-        ActivityCreate(
-            request=kwargs.get("request"),
-            username=kwargs.get("username"),
-            tier=kwargs.get("tier"),
-            status=kwargs.get("status"),
-            request_key=kwargs.get("request_key"),
-            result=kwargs.get("result"),
-            payload=kwargs.get("payload"),
-            ip_address=kwargs.get("ip_address"),
-            latency=kwargs.get("latency"),
-        )
-    )
