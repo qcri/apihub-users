@@ -23,6 +23,7 @@ class SubscriptionFactory(factory.alchemy.SQLAlchemyModelFactory):
     id = factory.Sequence(int)
     username = factory.Sequence(lambda n: f"tester{n}")
     application = "test"
+    active = True
     tier = SubscriptionTier.TRIAL
     credit = 100
     balance = 0
@@ -105,6 +106,7 @@ class TestSubscription:
         )
         assert response.status_code == 200
         assert response.json().get("credit") == 123
+        assert response.json().get("active") is True
 
     def test_get_all_subscriptions(self, client):
         response = client.get(
@@ -138,6 +140,16 @@ class TestSubscription:
         )
         assert response.status_code == 200, response.json()
         assert response.json().get("token") is not None
+
+        SubscriptionFactory(
+            username="tester", application="app_2", active=False, credit=1000
+        )
+
+        response = client.get(
+            "/subscription/app_2",
+        )
+
+        assert response.status_code == 400, response.json()
 
     def test_get_application_token_admin(self, client, db_session):
         client.app.dependency_overrides[require_token] = _require_admin_token
