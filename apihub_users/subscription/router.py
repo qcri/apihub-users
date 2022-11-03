@@ -4,7 +4,6 @@ from typing import Optional
 from pydantic import BaseModel, BaseSettings
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
-from starlette.responses import JSONResponse
 
 from ..common.db_session import create_session
 from ..security.schemas import UserBase  # TODO create a model for this UserBase
@@ -92,9 +91,7 @@ def get_active_subscription(
     try:
         subscription = query.get_active_subscription(user.username, application)
     except SubscriptionException:
-        return JSONResponse(
-            status_code=400, content={"detail": "Subscription not found"}
-        )
+        raise HTTPException(400, "Subscription not found")
 
     return subscription
 
@@ -104,34 +101,26 @@ def get_active_subscriptions(
     user: UserBase = Depends(require_token),
     session=Depends(create_session),
 ):
-    if user.is_user:
-        username = user.username
-    else:
+    if not user.is_user:
         return []
 
+    username = user.username
     query = SubscriptionQuery(session)
     try:
         subscriptions = query.get_active_subscriptions(username)
     except SubscriptionException:
         return []
 
-    return subscriptions
+    return [
+        SubscriptionTokenResponse(
+            username=subscription.username,
+            application=subscription.application,
+            expires_time=subscription.expires_at,
+        )
+        for subscription in subscriptions
+    ]
 
 
-# delete plan
-# @router.post("/subscription/_disable")
-# def disable_subscription(
-#     username: str = Depends(require_admin),
-#     session=Depends(create_session),
-# )
-
-# disable plan
-
-# enable plan
-
-# get usage summary
-
-# get ap your limitplication token
 class SubscriptionTokenResponse(BaseModel):
     username: str
     application: str

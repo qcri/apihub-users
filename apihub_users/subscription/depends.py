@@ -2,7 +2,7 @@ from fastapi import HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT
 from redis import Redis
 
-from apihub_users.subscription.schemas import SubscriptionBase
+from ..subscription.schemas import SubscriptionBase
 from ..common.db_session import create_session
 from ..common.redis_session import redis_conn
 from ..subscription.queries import SubscriptionQuery
